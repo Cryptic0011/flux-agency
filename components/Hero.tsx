@@ -33,7 +33,24 @@ export default function Hero() {
   const currentPhrase = PHRASES[phraseIndex]
 
   useEffect(() => {
-    let timer: NodeJS.Timeout
+    let animationId: number
+    let startTime: number | null = null
+
+    // Use requestAnimationFrame for more reliable timing on mobile Safari
+    // setTimeout gets heavily throttled during elastic overscroll at top of page
+    const scheduleUpdate = (delay: number, callback: () => void) => {
+      startTime = null
+      const tick = (timestamp: number) => {
+        if (startTime === null) startTime = timestamp
+        const elapsed = timestamp - startTime
+        if (elapsed >= delay) {
+          callback()
+        } else {
+          animationId = requestAnimationFrame(tick)
+        }
+      }
+      animationId = requestAnimationFrame(tick)
+    }
 
     if (phase === 'typing') {
       const targetText = currentPhrase.type === 'business-cycle'
@@ -41,9 +58,9 @@ export default function Hero() {
         : currentPhrase.text
 
       if (displayText.length < targetText.length) {
-        timer = setTimeout(() => {
+        scheduleUpdate(50, () => {
           setDisplayText(targetText.substring(0, displayText.length + 1))
-        }, 50)
+        })
       } else {
         // Finished typing
         if (currentPhrase.type === 'business-cycle') {
@@ -51,22 +68,22 @@ export default function Hero() {
           setPhase('cycling')
           cycleCountRef.current = 0
         } else {
-          timer = setTimeout(() => {
+          scheduleUpdate(1500, () => {
             setPhase('deleting')
-          }, 1500)
+          })
         }
       }
     } else if (phase === 'cycling') {
       if (cycleCountRef.current < BUSINESS_TYPES.length - 1) {
-        timer = setTimeout(() => {
+        scheduleUpdate(350, () => {
           cycleCountRef.current += 1
           setBusinessIndex(cycleCountRef.current)
-        }, 350) // Smooth, slower cycling
+        })
       } else {
         // Done cycling, wait then delete
-        timer = setTimeout(() => {
+        scheduleUpdate(1200, () => {
           setPhase('deleting')
-        }, 1200)
+        })
       }
     } else if (phase === 'deleting') {
       const targetText = currentPhrase.type === 'business-cycle'
@@ -74,9 +91,9 @@ export default function Hero() {
         : currentPhrase.text
 
       if (displayText.length > 0) {
-        timer = setTimeout(() => {
+        scheduleUpdate(20, () => {
           setDisplayText(targetText.substring(0, displayText.length - 1))
-        }, 20)
+        })
       } else {
         // Finished deleting, move to next phrase
         const nextIndex = (phraseIndex + 1) % PHRASES.length
@@ -87,7 +104,7 @@ export default function Hero() {
       }
     }
 
-    return () => clearTimeout(timer)
+    return () => cancelAnimationFrame(animationId)
   }, [phase, displayText, phraseIndex, currentPhrase, businessIndex])
 
   // Render the typing text

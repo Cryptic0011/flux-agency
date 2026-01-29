@@ -21,6 +21,8 @@ export default function ParticleBackground() {
   const particlesRef = useRef<Particle[]>([])
   const animationRef = useRef<number | null>(null)
   const lastFrameRef = useRef<number>(0)
+  // Cache dimensions to avoid layout thrashing in animation loop
+  const dimensionsRef = useRef({ width: 0, height: 0, dpr: 1 })
 
   useEffect(() => {
     // Respect user preference for reduced motion
@@ -38,14 +40,26 @@ export default function ParticleBackground() {
     const targetFPS = isMobile ? 30 : 60
     const frameInterval = 1000 / targetFPS
 
+    // Debounce resize to prevent rapid-fire on mobile Safari address bar changes
+    let resizeTimeout: ReturnType<typeof setTimeout> | null = null
+
     const resizeCanvas = () => {
       // Use device pixel ratio for sharper rendering on high DPI screens
       // but cap at 2 for performance
       const dpr = Math.min(window.devicePixelRatio || 1, 2)
-      canvas.width = window.innerWidth * dpr
-      canvas.height = window.innerHeight * dpr
-      canvas.style.width = `${window.innerWidth}px`
-      canvas.style.height = `${window.innerHeight}px`
+      const width = window.innerWidth
+      const height = window.innerHeight
+
+      // Cache dimensions for use in animation loop
+      dimensionsRef.current = { width, height, dpr }
+
+      canvas.width = width * dpr
+      canvas.height = height * dpr
+      canvas.style.width = `${width}px`
+      canvas.style.height = `${height}px`
+
+      // Reset transform before applying new scale (fixes cumulative scale bug)
+      ctx.setTransform(1, 0, 0, 1, 0, 0)
       ctx.scale(dpr, dpr)
     }
 
@@ -91,7 +105,9 @@ export default function ParticleBackground() {
       if (elapsed >= frameInterval) {
         lastFrameRef.current = timestamp - (elapsed % frameInterval)
 
-        ctx.clearRect(0, 0, window.innerWidth, window.innerHeight)
+        // Use cached dimensions to avoid layout thrashing
+        const { width, height } = dimensionsRef.current
+        ctx.clearRect(0, 0, width, height)
 
         particlesRef.current.forEach((particle, index) => {
           particle.y -= particle.speedY
@@ -128,18 +144,29 @@ export default function ParticleBackground() {
     initParticles()
     animationRef.current = requestAnimationFrame(animate)
 
-    window.addEventListener('resize', () => {
-      resizeCanvas()
-      initParticles()
-    })
+    const handleResize = () => {
+      // Debounce resize to prevent rapid-fire events on mobile Safari
+      // when address bar animates in/out at top of page
+      if (resizeTimeout) {
+        clearTimeout(resizeTimeout)
+      }
+      resizeTimeout = setTimeout(() => {
+        resizeCanvas()
+        initParticles()
+      }, 100)
+    }
 
+    window.addEventListener('resize', handleResize)
     document.addEventListener('visibilitychange', handleVisibilityChange)
 
     return () => {
       if (animationRef.current) {
         cancelAnimationFrame(animationRef.current)
       }
-      window.removeEventListener('resize', resizeCanvas)
+      if (resizeTimeout) {
+        clearTimeout(resizeTimeout)
+      }
+      window.removeEventListener('resize', handleResize)
       document.removeEventListener('visibilitychange', handleVisibilityChange)
     }
   }, [])
