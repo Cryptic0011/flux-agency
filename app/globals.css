@@ -1,0 +1,188 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: #0a0a0f;
+    --foreground: #ffffff;
+  }
+
+  html {
+    scroll-behavior: smooth;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    /* Prevent horizontal scroll on mobile */
+    overflow-x: hidden;
+  }
+
+  body {
+    @apply bg-dark-900 text-white;
+    /* Ensure proper mobile viewport */
+    min-height: 100dvh;
+    overflow-x: hidden;
+  }
+
+  ::selection {
+    @apply bg-neon-purple/30 text-white;
+  }
+
+  /* Ensure touch targets are at least 44px for accessibility */
+  button, a, input, select, textarea {
+    min-height: 44px;
+  }
+}
+
+@layer components {
+  .gradient-text {
+    @apply bg-gradient-to-r from-neon-purple via-neon-pink to-neon-blue bg-clip-text text-transparent;
+  }
+
+  .glow-purple {
+    box-shadow: 0 0 20px rgba(168, 85, 247, 0.3), 0 0 40px rgba(168, 85, 247, 0.2);
+  }
+
+  .glow-blue {
+    box-shadow: 0 0 20px rgba(59, 130, 246, 0.3), 0 0 40px rgba(59, 130, 246, 0.2);
+  }
+
+  /* Scroll reveal - starts hidden, revealed by JS */
+  .scroll-reveal {
+    opacity: 0;
+    transform: translateY(24px);
+    transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+    /* Hardware acceleration hint */
+    will-change: transform, opacity;
+  }
+
+  .scroll-reveal.is-visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  /* Staggered delays for card grids */
+  .scroll-reveal.stagger-1 { transition-delay: 0ms; }
+  .scroll-reveal.stagger-2 { transition-delay: 80ms; }
+  .scroll-reveal.stagger-3 { transition-delay: 160ms; }
+  .scroll-reveal.stagger-4 { transition-delay: 240ms; }
+  .scroll-reveal.stagger-5 { transition-delay: 320ms; }
+  .scroll-reveal.stagger-6 { transition-delay: 400ms; }
+  .scroll-reveal.stagger-7 { transition-delay: 480ms; }
+  .scroll-reveal.stagger-8 { transition-delay: 560ms; }
+
+  .card-hover {
+    @apply transition-all duration-300 hover:border-neon-purple/50 hover:shadow-lg hover:shadow-neon-purple/10;
+    /* Smooth hover transform */
+    transform: translateY(0);
+  }
+
+  .card-hover:hover {
+    transform: translateY(-4px);
+  }
+
+  /* Reduce hover effects on touch devices */
+  @media (hover: none) {
+    .card-hover:hover {
+      transform: translateY(0);
+    }
+  }
+
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-2 px-6 py-3
+           bg-gradient-to-r from-neon-purple to-neon-blue
+           hover:from-neon-purple/90 hover:to-neon-blue/90
+           text-white font-semibold rounded-lg
+           transition-all duration-300
+           hover:shadow-xl hover:shadow-neon-purple/30;
+    /* Remove scale on mobile for better tap feel */
+  }
+
+  @media (hover: hover) {
+    .btn-primary:hover {
+      transform: scale(1.02);
+    }
+  }
+
+  .btn-secondary {
+    @apply inline-flex items-center justify-center gap-2 px-6 py-3
+           bg-dark-700 border border-dark-500
+           hover:border-neon-purple/50 hover:bg-dark-600
+           text-white font-medium rounded-lg
+           transition-all duration-300;
+  }
+
+  .section-container {
+    @apply relative py-16 sm:py-20 md:py-28;
+  }
+
+  .section-inner {
+    @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8;
+  }
+}
+
+@layer utilities {
+  .animation-delay-100 { animation-delay: 100ms; }
+  .animation-delay-200 { animation-delay: 200ms; }
+  .animation-delay-300 { animation-delay: 300ms; }
+  .animation-delay-400 { animation-delay: 400ms; }
+  .animation-delay-500 { animation-delay: 500ms; }
+  .animation-delay-600 { animation-delay: 600ms; }
+
+  /* Safe area insets for modern phones with notches */
+  .safe-area-inset-top {
+    padding-top: env(safe-area-inset-top);
+  }
+
+  .safe-area-inset-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+}
+
+/* Respect user preference for reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+
+  .scroll-reveal {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+}
+
+/* Custom scrollbar - hide on mobile for cleaner look */
+@media (min-width: 768px) {
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  ::-webkit-scrollbar-track {
+    @apply bg-dark-900;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    @apply bg-neon-purple/50 rounded-full;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-neon-purple/70;
+  }
+}
+
+/* Code block styling */
+pre, code {
+  font-family: var(--font-mono), 'JetBrains Mono', 'Fira Code', monospace;
+}
+
+/* Optimize blur effects on mobile */
+@media (max-width: 640px) {
+  .blur-3xl {
+    filter: blur(40px);
+  }
+}
