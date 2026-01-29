@@ -9,10 +9,28 @@ export default function Navbar() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
 
   useEffect(() => {
+    // Track last known state to prevent unnecessary re-renders
+    let lastScrolled = false
+    let ticking = false
+
     const handleScroll = () => {
-      setIsScrolled(window.scrollY > 20)
+      // Use requestAnimationFrame to throttle scroll events
+      // This prevents excessive re-renders during mobile Safari's elastic overscroll
+      if (!ticking) {
+        requestAnimationFrame(() => {
+          const shouldBeScrolled = window.scrollY > 20
+          // Only update state if the value actually changed
+          if (shouldBeScrolled !== lastScrolled) {
+            lastScrolled = shouldBeScrolled
+            setIsScrolled(shouldBeScrolled)
+          }
+          ticking = false
+        })
+        ticking = true
+      }
     }
-    window.addEventListener('scroll', handleScroll)
+
+    window.addEventListener('scroll', handleScroll, { passive: true })
     return () => window.removeEventListener('scroll', handleScroll)
   }, [])
 
