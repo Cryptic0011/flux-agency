@@ -150,7 +150,16 @@ export default function ParticleBackground() {
       if (resizeTimeout) {
         clearTimeout(resizeTimeout)
       }
+      
       resizeTimeout = setTimeout(() => {
+        // On mobile, if the width hasn't changed, it's likely just the address bar
+        // showing/hiding. In this case, we don't need to resize the canvas as it 
+        // effectively covers the screen anyway (fixed position).
+        const newWidth = window.innerWidth
+        if (isMobile && Math.abs(newWidth - dimensionsRef.current.width) < 10) {
+           return
+        }
+
         resizeCanvas()
         initParticles()
       }, 100)
