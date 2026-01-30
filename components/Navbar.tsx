@@ -42,11 +42,13 @@ export default function Navbar() {
 
   return (
     <nav
-      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
+      className={`fixed top-0 left-0 right-0 z-50 transition-[background-color,backdrop-filter,border-color] duration-300 ${
         isScrolled || isMobileMenuOpen
           ? 'bg-dark-900/95 backdrop-blur-lg border-b border-dark-600/50'
-          : 'bg-transparent'
+          : 'bg-transparent border-b border-transparent'
       }`}
+      // Force GPU layer to prevent compositing thrash with particle canvas
+      style={{ transform: 'translateZ(0)' }}
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="relative flex items-center justify-between h-16 sm:h-20">
