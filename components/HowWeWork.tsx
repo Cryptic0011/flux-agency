@@ -33,8 +33,11 @@ export default function HowWeWork() {
   })
 
   return (
-    <section id="work" className="section-container bg-dark-800/30">
-      <div className="section-inner">
+    <section id="work" className="section-container bg-dark-800/30 relative overflow-hidden">
+      {/* Ambient glow */}
+      <div className="absolute top-1/3 -right-32 w-[500px] h-[500px] bg-neon-cyan/[0.07] rounded-full blur-3xl" />
+      <div className="absolute bottom-0 left-1/4 w-[400px] h-[400px] bg-neon-purple/[0.05] rounded-full blur-3xl" />
+      <div className="section-inner relative">
         <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
           {/* Left: Process Steps */}
           <div>

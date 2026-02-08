@@ -6,18 +6,25 @@ import HowWeWork from '@/components/HowWeWork'
 import TechStack from '@/components/TechStack'
 import CTA from '@/components/CTA'
 import Footer from '@/components/Footer'
-import ParticleBackground from '@/components/ParticleBackground'
+function GradientDivider() {
+  return (
+    <div className="relative h-px w-full max-w-5xl mx-auto px-8">
+      <div className="h-px bg-gradient-to-r from-transparent via-neon-purple/20 to-transparent" />
+    </div>
+  )
+}
 
 export default function Home() {
   return (
     <>
       <Navbar />
       <main className="relative">
-        <ParticleBackground />
         <Hero />
         <BusinessFeatures />
+        <GradientDivider />
         <Services />
         <HowWeWork />
+        <GradientDivider />
         <TechStack />
         <CTA />
       </main>

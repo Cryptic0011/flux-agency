@@ -214,8 +214,11 @@ function WebsitePreviewDemo() {
 
 export default function BusinessFeatures() {
   return (
-    <section id="services" className="section-container bg-dark-800/30">
-      <div className="section-inner">
+    <section id="services" className="section-container bg-dark-800/30 relative overflow-hidden">
+      {/* Ambient glow */}
+      <div className="absolute top-0 left-1/3 w-[500px] h-[500px] bg-green-500/[0.05] rounded-full blur-3xl" />
+      <div className="absolute bottom-1/4 -right-32 w-[400px] h-[400px] bg-neon-purple/[0.07] rounded-full blur-3xl" />
+      <div className="section-inner relative">
         {/* Section Header */}
         <div className="text-center mb-16">
           <span className="inline-block px-4 py-1 mb-4 text-xs font-medium text-green-400 bg-green-400/10 rounded-full border border-green-400/20">

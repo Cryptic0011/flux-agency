@@ -18,6 +18,11 @@
 
   body {
     @apply bg-dark-900 text-white;
+    /* Page-level gradient for depth */
+    background-image:
+      radial-gradient(ellipse 80% 50% at 50% 0%, rgba(168, 85, 247, 0.08) 0%, transparent 60%),
+      radial-gradient(ellipse 70% 50% at 10% 50%, rgba(59, 130, 246, 0.06) 0%, transparent 50%),
+      radial-gradient(ellipse 70% 50% at 90% 80%, rgba(168, 85, 247, 0.06) 0%, transparent 50%);
     /* Ensure proper mobile viewport */
     min-height: 100dvh;
     overflow-x: hidden;
@@ -51,13 +56,14 @@
     opacity: 0;
     transform: translateY(24px);
     transition: opacity 0.6s ease-out, transform 0.6s ease-out;
-    /* Hardware acceleration hint */
     will-change: transform, opacity;
   }
 
   .scroll-reveal.is-visible {
     opacity: 1;
     transform: translateY(0);
+    /* Release GPU layer after transition completes */
+    will-change: auto;
   }
 
   /* Staggered delays for card grids */

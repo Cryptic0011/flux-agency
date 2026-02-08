@@ -16,17 +16,16 @@ const footerLinks = [
     links: [
       { label: 'About', href: '#' },
       { label: 'Process', href: '#work' },
-      { label: 'Tech Stack', href: '#tech' },
+      { label: 'Why FLUX', href: '#tech' },
       { label: 'Contact', href: '#contact' },
     ],
   },
   {
-    title: 'Connect',
+    title: 'Get in Touch',
     links: [
-      { label: 'Twitter', href: 'https://twitter.com' },
-      { label: 'GitHub', href: 'https://github.com' },
-      { label: 'LinkedIn', href: 'https://linkedin.com' },
-      { label: 'Discord', href: 'https://discord.gg' },
+      { label: 'Start a Project', href: '#contact' },
+      { label: 'Free Consultation', href: '#contact' },
+      { label: 'Client Portal', href: '/portal' },
     ],
   },
 ]
@@ -49,7 +48,7 @@ export default function Footer() {
               />
             </Link>
             <p className="text-sm text-gray-500 max-w-xs">
-              High-performance web development and automation for modern brands.
+              Web design, SEO, and business automation for Georgia businesses. Based in Canton, GA.
             </p>
           </div>
 
@@ -76,13 +75,13 @@ export default function Footer() {
         {/* Bottom Bar */}
         <div className="py-6 border-t border-dark-700 flex flex-col sm:flex-row items-center justify-between gap-4">
           <p className="text-sm text-gray-500">
-            &copy; {new Date().getFullYear()} FLUX Studio. All rights reserved.
+            &copy; {new Date().getFullYear()} Flux Studio, LLC. All rights reserved.
           </p>
           <div className="flex items-center gap-4">
-            <Link href="#" className="text-xs text-gray-500 hover:text-white transition-colors">
+            <Link href="/privacy" className="text-xs text-gray-500 hover:text-white transition-colors">
               Privacy Policy
             </Link>
-            <Link href="#" className="text-xs text-gray-500 hover:text-white transition-colors">
+            <Link href="/terms" className="text-xs text-gray-500 hover:text-white transition-colors">
               Terms of Service
             </Link>
           </div>
