@@ -29,7 +29,15 @@ export async function updateSession(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser()
 
-  const { pathname } = request.nextUrl
+  const { pathname, searchParams } = request.nextUrl
+
+  // Handle auth code on any route (email confirmation redirects to Site URL with ?code=)
+  const code = searchParams.get('code')
+  if (code && pathname === '/') {
+    const url = request.nextUrl.clone()
+    url.pathname = '/auth/callback'
+    return NextResponse.redirect(url)
+  }
 
   // Redirect unauthenticated users away from protected routes
   if (!user && (pathname.startsWith('/portal') || pathname.startsWith('/admin'))) {
