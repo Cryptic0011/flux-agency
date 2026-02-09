@@ -1,7 +1,6 @@
 import { redirect } from 'next/navigation'
-import Link from 'next/link'
-import Image from 'next/image'
 import { createClient } from '@/lib/supabase/server'
+import { AdminNav } from './admin-nav'
 
 export default async function AdminLayout({
   children,
@@ -18,7 +17,6 @@ export default async function AdminLayout({
     redirect('/login')
   }
 
-  // Check role — if not admin, redirect to portal
   const { data: profile } = await supabase
     .from('profiles')
     .select('role, full_name')
@@ -31,21 +29,11 @@ export default async function AdminLayout({
 
   return (
     <div className="min-h-screen bg-dark-900">
-      {/* Admin Navigation */}
-      <nav className="border-b border-dark-600/50 bg-dark-800/80 backdrop-blur-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            <Link href="/admin" className="flex items-center gap-3">
-              <Image
-                src="/images/logonobg.png"
-                alt="FLUX"
-                width={32}
-                height={32}
-                className="h-8 w-auto"
-              />
-              <span className="text-white font-semibold">Admin Dashboard</span>
-            </Link>
+      <AdminNav />
 
+      <div className="lg:pl-64">
+        <header className="sticky top-0 z-30 border-b border-dark-600/50 bg-dark-800/80 backdrop-blur-sm">
+          <div className="flex items-center justify-end h-16 px-4 sm:px-6 lg:px-8">
             <div className="flex items-center gap-4">
               <span className="text-sm text-gray-400">
                 {profile?.full_name || user.email}
@@ -60,13 +48,12 @@ export default async function AdminLayout({
               </form>
             </div>
           </div>
-        </div>
-      </nav>
+        </header>
 
-      {/* Admin Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {children}
-      </main>
+        <main className="p-4 sm:p-6 lg:p-8">
+          {children}
+        </main>
+      </div>
     </div>
   )
 }
