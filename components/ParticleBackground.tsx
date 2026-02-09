@@ -128,18 +128,19 @@ export default function ParticleBackground() {
     initParticles()
     animationRef.current = requestAnimationFrame(animate)
 
-    window.addEventListener('resize', () => {
+    const handleResize = () => {
       resizeCanvas()
       initParticles()
-    })
+    }
 
+    window.addEventListener('resize', handleResize)
     document.addEventListener('visibilitychange', handleVisibilityChange)
 
     return () => {
       if (animationRef.current) {
         cancelAnimationFrame(animationRef.current)
       }
-      window.removeEventListener('resize', resizeCanvas)
+      window.removeEventListener('resize', handleResize)
       document.removeEventListener('visibilitychange', handleVisibilityChange)
     }
   }, [])

@@ -130,10 +130,10 @@ export default function Hero() {
       {/* Background Grid */}
       <div className="absolute inset-0 bg-grid-pattern bg-grid opacity-30" />
 
-      {/* Gradient Orbs - reduced on mobile for performance */}
-      <div className="absolute top-1/4 -left-32 w-64 sm:w-96 h-64 sm:h-96 bg-neon-purple/20 rounded-full blur-3xl animate-float" />
-      <div className="absolute bottom-1/4 -right-32 w-64 sm:w-96 h-64 sm:h-96 bg-neon-blue/20 rounded-full blur-3xl animate-float-delayed" />
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[400px] sm:w-[600px] h-[400px] sm:h-[600px] bg-neon-pink/10 rounded-full blur-3xl animate-pulse-slow" />
+      {/* Gradient Orbs - using radial-gradient instead of blur filter to avoid Safari compositing artifacts */}
+      <div className="absolute top-1/4 -left-32 w-[20rem] sm:w-[28rem] h-[20rem] sm:h-[28rem] rounded-full animate-float" style={{ background: 'radial-gradient(circle, rgba(168,85,247,0.2) 0%, transparent 70%)' }} />
+      <div className="absolute bottom-1/4 -right-32 w-[20rem] sm:w-[28rem] h-[20rem] sm:h-[28rem] rounded-full animate-float-delayed" style={{ background: 'radial-gradient(circle, rgba(59,130,246,0.2) 0%, transparent 70%)' }} />
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[28rem] sm:w-[40rem] h-[28rem] sm:h-[40rem] rounded-full animate-pulse-slow" style={{ background: 'radial-gradient(circle, rgba(236,72,153,0.1) 0%, transparent 70%)' }} />
 
       {/* Content */}
       <div className="relative z-10 section-inner text-center pt-20">
@@ -172,8 +172,8 @@ export default function Hero() {
 
         {/* Subheadline */}
         <p className="text-base sm:text-lg md:text-xl text-gray-400 max-w-2xl mx-auto mb-8 sm:mb-10 animate-fade-in-up animation-delay-200 px-4">
-          FLUX is a web-first studio specializing in lightning-fast websites,
-          technical SEO, and custom business automation for modern brands.
+          A Georgia-based web studio building lightning-fast websites,
+          SEO-optimized pages, and custom business automation. Based in Canton, serving all of GA.
         </p>
 
         {/* CTAs */}
@@ -201,14 +201,17 @@ export default function Hero() {
 
         {/* Trust Indicators */}
         <div className="mt-10 sm:mt-12 pb-16 sm:pb-20 animate-fade-in-up animation-delay-400">
-          <p className="text-xs sm:text-sm text-gray-500 mb-3 sm:mb-4">Built with industry-leading technology</p>
-          <div className="flex items-center justify-center gap-2 sm:gap-4 flex-wrap opacity-60 px-4">
-            {['Next.js', 'Vercel', 'TypeScript', 'Tailwind'].map((tech) => (
+          <p className="text-xs sm:text-sm text-gray-500 mb-3 sm:mb-4">Trusted by local businesses</p>
+          <div className="flex items-center justify-center gap-3 sm:gap-6 flex-wrap opacity-70 px-4">
+            {['Fast Load Times', 'SEO Optimized', 'Mobile First', 'You Own Everything'].map((item) => (
               <span
-                key={tech}
-                className="text-xs font-mono text-gray-400 px-2 py-1 rounded-md bg-dark-800/50 border border-dark-600/50"
+                key={item}
+                className="flex items-center gap-1.5 text-xs text-gray-400"
               >
-                {tech}
+                <svg className="w-3.5 h-3.5 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                </svg>
+                {item}
               </span>
             ))}
           </div>

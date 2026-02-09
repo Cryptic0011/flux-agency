@@ -19,7 +19,7 @@ export default function Navbar() {
   const navLinks = [
     { href: '#services', label: 'Services' },
     { href: '#work', label: 'How We Work' },
-    { href: '#tech', label: 'Tech Stack' },
+    { href: '#tech', label: 'Why FLUX' },
   ]
 
   return (

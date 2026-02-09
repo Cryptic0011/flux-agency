@@ -105,8 +105,11 @@ function ServiceCard({ service }: { service: Service }) {
 
 export default function Services() {
   return (
-    <section className="section-container">
-      <div className="section-inner">
+    <section className="section-container relative overflow-hidden">
+      {/* Ambient glow */}
+      <div className="absolute top-1/2 -left-48 w-[500px] h-[500px] bg-neon-purple/10 rounded-full blur-3xl" />
+      <div className="absolute bottom-0 -right-32 w-[400px] h-[400px] bg-neon-blue/[0.07] rounded-full blur-3xl" />
+      <div className="section-inner relative">
         {/* Section Header */}
         <div className="text-center mb-16">
           <span className="inline-block px-4 py-1 mb-4 text-xs font-medium text-neon-purple bg-neon-purple/10 rounded-full border border-neon-purple/20">
