@@ -130,10 +130,10 @@ export default function Hero() {
       {/* Background Grid */}
       <div className="absolute inset-0 bg-grid-pattern bg-grid opacity-30" />
 
-      {/* Gradient Orbs - reduced on mobile for performance */}
-      <div className="absolute top-1/4 -left-32 w-64 sm:w-96 h-64 sm:h-96 bg-neon-purple/20 rounded-full blur-3xl animate-float" />
-      <div className="absolute bottom-1/4 -right-32 w-64 sm:w-96 h-64 sm:h-96 bg-neon-blue/20 rounded-full blur-3xl animate-float-delayed" />
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[400px] sm:w-[600px] h-[400px] sm:h-[600px] bg-neon-pink/10 rounded-full blur-3xl animate-pulse-slow" />
+      {/* Gradient Orbs - using radial-gradient instead of blur filter to avoid Safari compositing artifacts */}
+      <div className="absolute top-1/4 -left-32 w-[20rem] sm:w-[28rem] h-[20rem] sm:h-[28rem] rounded-full animate-float" style={{ background: 'radial-gradient(circle, rgba(168,85,247,0.2) 0%, transparent 70%)' }} />
+      <div className="absolute bottom-1/4 -right-32 w-[20rem] sm:w-[28rem] h-[20rem] sm:h-[28rem] rounded-full animate-float-delayed" style={{ background: 'radial-gradient(circle, rgba(59,130,246,0.2) 0%, transparent 70%)' }} />
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[28rem] sm:w-[40rem] h-[28rem] sm:h-[40rem] rounded-full animate-pulse-slow" style={{ background: 'radial-gradient(circle, rgba(236,72,153,0.1) 0%, transparent 70%)' }} />
 
       {/* Content */}
       <div className="relative z-10 section-inner text-center pt-20">

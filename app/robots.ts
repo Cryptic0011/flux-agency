@@ -5,6 +5,7 @@ export default function robots(): MetadataRoute.Robots {
     rules: {
       userAgent: '*',
       allow: '/',
+      disallow: ['/portal/', '/admin/', '/login', '/auth/'],
     },
     sitemap: 'https://builtbyflux.com/sitemap.xml',
   }
