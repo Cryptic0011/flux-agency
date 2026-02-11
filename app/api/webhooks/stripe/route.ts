@@ -218,16 +218,29 @@ async function handleInvoicePaid(
   const profile = await getProfileByStripeCustomer(supabase, customerId)
   const projectId = await resolveProjectId(supabase, invoice)
 
-  await supabase
-    .from('invoices')
-    .update({
+  const stripeSubId = getSubscriptionIdFromInvoice(invoice)
+  const invoiceType = stripeSubId ? 'subscription' : 'one_time'
+
+  // Upsert so it works even if invoice.created wasn't processed
+  await supabase.from('invoices').upsert(
+    {
+      client_id: profile?.id ?? null,
+      project_id: projectId,
+      stripe_invoice_id: invoice.id,
+      number: invoice.number,
+      amount: invoice.amount_paid ?? 0,
+      currency: invoice.currency ?? 'usd',
+      type: invoiceType,
       status: 'paid',
       paid_at: new Date().toISOString(),
+      due_date: toTimestamp(invoice.due_date),
       hosted_invoice_url: invoice.hosted_invoice_url ?? null,
       invoice_pdf: invoice.invoice_pdf ?? null,
+      description: invoice.description ?? null,
       updated_at: new Date().toISOString(),
-    })
-    .eq('stripe_invoice_id', invoice.id)
+    },
+    { onConflict: 'stripe_invoice_id' }
+  )
 
   if (profile) {
     const amount = formatCurrency(invoice.amount_paid ?? 0)
@@ -258,13 +271,27 @@ async function handleInvoicePaymentFailed(
   const profile = await getProfileByStripeCustomer(supabase, customerId)
   const projectId = await resolveProjectId(supabase, invoice)
 
-  await supabase
-    .from('invoices')
-    .update({
+  const stripeSubId = getSubscriptionIdFromInvoice(invoice)
+  const invoiceType = stripeSubId ? 'subscription' : 'one_time'
+
+  await supabase.from('invoices').upsert(
+    {
+      client_id: profile?.id ?? null,
+      project_id: projectId,
+      stripe_invoice_id: invoice.id,
+      number: invoice.number,
+      amount: invoice.amount_due ?? 0,
+      currency: invoice.currency ?? 'usd',
+      type: invoiceType,
       status: 'open',
+      due_date: toTimestamp(invoice.due_date),
+      hosted_invoice_url: invoice.hosted_invoice_url ?? null,
+      invoice_pdf: invoice.invoice_pdf ?? null,
+      description: invoice.description ?? null,
       updated_at: new Date().toISOString(),
-    })
-    .eq('stripe_invoice_id', invoice.id)
+    },
+    { onConflict: 'stripe_invoice_id' }
+  )
 
   const amount = formatCurrency(invoice.amount_due ?? 0)
 
@@ -300,13 +327,27 @@ async function handleInvoiceOverdue(
   const profile = await getProfileByStripeCustomer(supabase, customerId)
   const projectId = await resolveProjectId(supabase, invoice)
 
-  await supabase
-    .from('invoices')
-    .update({
+  const stripeSubId = getSubscriptionIdFromInvoice(invoice)
+  const invoiceType = stripeSubId ? 'subscription' : 'one_time'
+
+  await supabase.from('invoices').upsert(
+    {
+      client_id: profile?.id ?? null,
+      project_id: projectId,
+      stripe_invoice_id: invoice.id,
+      number: invoice.number,
+      amount: invoice.amount_due ?? 0,
+      currency: invoice.currency ?? 'usd',
+      type: invoiceType,
       status: 'open',
+      due_date: toTimestamp(invoice.due_date),
+      hosted_invoice_url: invoice.hosted_invoice_url ?? null,
+      invoice_pdf: invoice.invoice_pdf ?? null,
+      description: invoice.description ?? null,
       updated_at: new Date().toISOString(),
-    })
-    .eq('stripe_invoice_id', invoice.id)
+    },
+    { onConflict: 'stripe_invoice_id' }
+  )
 
   const amount = formatCurrency(invoice.amount_due ?? 0)
 
