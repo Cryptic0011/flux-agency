@@ -22,6 +22,15 @@ const colorMap: Record<string, string> = {
   paid: 'bg-green-500/20 text-green-400 border-green-500/30',
   void: 'bg-red-500/20 text-red-400 border-red-500/30',
   uncollectible: 'bg-red-500/20 text-red-400 border-red-500/30',
+
+  // Subscription / billing statuses
+  past_due: 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30',
+  canceled: 'bg-red-500/20 text-red-400 border-red-500/30',
+  trialing: 'bg-cyan-500/20 text-cyan-400 border-cyan-500/30',
+  no_billing: 'bg-gray-500/20 text-gray-400 border-gray-500/30',
+  pending_billing: 'bg-blue-500/20 text-blue-400 border-blue-500/30',
+  overdue: 'bg-red-500/20 text-red-400 border-red-500/30',
+  incomplete: 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30',
 }
 
 export function StatusBadge({ status }: { status: string }) {

@@ -3,6 +3,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { revalidatePath } from 'next/cache'
+import { createStripeProduct, createStripePrice, updateSubscriptionPrice } from '@/lib/stripe-helpers'
 
 async function requireAdmin() {
   const supabase = await createClient()
@@ -28,14 +29,45 @@ export async function createProject(formData: FormData) {
   const domain = formData.get('domain') as string
   const monthly_price = parseFloat(formData.get('monthly_price') as string) || 0
   const status = formData.get('status') as string
+  const vercel_project_id = (formData.get('vercel_project_id') as string) || null
+
+  // Build the insert data
+  const insertData: Record<string, unknown> = {
+    name,
+    description,
+    client_id,
+    domain,
+    monthly_price,
+    status,
+    vercel_project_id,
+  }
 
   const { data: project, error } = await supabase
     .from('projects')
-    .insert({ name, description, client_id, domain, monthly_price, status })
+    .insert(insertData)
     .select('id')
     .single()
 
   if (error) throw new Error(error.message)
+
+  // If monthly_price > 0, create Stripe Product and Price
+  if (monthly_price > 0) {
+    try {
+      const stripeProduct = await createStripeProduct(name, project.id)
+      const stripePrice = await createStripePrice(stripeProduct.id, monthly_price)
+
+      await supabase
+        .from('projects')
+        .update({
+          stripe_product_id: stripeProduct.id,
+          stripe_price_id: stripePrice.id,
+        })
+        .eq('id', project.id)
+    } catch (err) {
+      console.error('Failed to create Stripe product/price:', err)
+      // Project is still created, Stripe can be set up later
+    }
+  }
 
   // Create site_controls row
   await supabase
@@ -55,10 +87,75 @@ export async function updateProject(id: string, formData: FormData) {
   const domain = formData.get('domain') as string
   const monthly_price = parseFloat(formData.get('monthly_price') as string) || 0
   const status = formData.get('status') as string
+  const vercel_project_id = (formData.get('vercel_project_id') as string) || null
+
+  // Get existing project to check for price changes
+  const { data: existingProject } = await supabase
+    .from('projects')
+    .select('monthly_price, stripe_product_id, stripe_price_id')
+    .eq('id', id)
+    .single()
+
+  const updateData: Record<string, unknown> = {
+    name,
+    description,
+    domain,
+    monthly_price,
+    status,
+    vercel_project_id,
+    updated_at: new Date().toISOString(),
+  }
+
+  // Handle Stripe price changes
+  if (existingProject && monthly_price > 0) {
+    const priceChanged = existingProject.monthly_price !== monthly_price
+
+    if (!existingProject.stripe_product_id) {
+      // No Stripe product yet — create one
+      try {
+        const stripeProduct = await createStripeProduct(name, id)
+        const stripePrice = await createStripePrice(stripeProduct.id, monthly_price)
+        updateData.stripe_product_id = stripeProduct.id
+        updateData.stripe_price_id = stripePrice.id
+      } catch (err) {
+        console.error('Failed to create Stripe product/price:', err)
+      }
+    } else if (priceChanged && existingProject.stripe_product_id) {
+      // Price changed — create a new Stripe Price
+      try {
+        const newStripePrice = await createStripePrice(existingProject.stripe_product_id, monthly_price)
+        updateData.stripe_price_id = newStripePrice.id
+
+        // If there's an active subscription, update it
+        if (existingProject.stripe_price_id) {
+          const { data: activeSub } = await supabase
+            .from('subscriptions')
+            .select('stripe_subscription_id')
+            .eq('project_id', id)
+            .eq('status', 'active')
+            .single()
+
+          if (activeSub?.stripe_subscription_id) {
+            try {
+              await updateSubscriptionPrice(
+                activeSub.stripe_subscription_id,
+                existingProject.stripe_price_id,
+                newStripePrice.id
+              )
+            } catch (err) {
+              console.error('Failed to update subscription price:', err)
+            }
+          }
+        }
+      } catch (err) {
+        console.error('Failed to create new Stripe price:', err)
+      }
+    }
+  }
 
   await supabase
     .from('projects')
-    .update({ name, description, domain, monthly_price, status, updated_at: new Date().toISOString() })
+    .update(updateData)
     .eq('id', id)
 
   revalidatePath(`/admin/projects/${id}`)

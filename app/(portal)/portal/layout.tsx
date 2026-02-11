@@ -52,10 +52,10 @@ export default async function PortalLayout({
                   Dashboard
                 </Link>
                 <Link
-                  href="/portal/invoices"
+                  href="/portal/billing"
                   className="px-3 py-1.5 rounded-lg text-sm text-gray-400 hover:text-white hover:bg-dark-700/50 transition-colors"
                 >
-                  Invoices
+                  Billing
                 </Link>
               </div>
             </div>

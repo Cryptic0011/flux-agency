@@ -2,9 +2,20 @@ import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { StatusBadge } from '@/components/ui/status-badge'
+import { VercelProjectSelect } from '@/components/ui/vercel-project-select'
 import { updateProject, updateSiteControl } from '../actions'
 
 export const metadata = { title: 'Project Detail — Admin' }
+
+function getBillingBadge(subscription: { status: string } | null, monthlyPrice: number) {
+  if (monthlyPrice === 0) return { label: 'Free', status: 'completed' }
+  if (!subscription) return { label: 'No Subscription', status: 'draft' }
+  if (subscription.status === 'active') return { label: 'Paid', status: 'active' }
+  if (subscription.status === 'past_due') return { label: 'Past Due', status: 'lost' }
+  if (subscription.status === 'canceled') return { label: 'Canceled', status: 'lost' }
+  if (subscription.status === 'incomplete') return { label: 'Incomplete', status: 'paused' }
+  return { label: subscription.status, status: 'paused' }
+}
 
 export default async function ProjectDetailPage({
   params,
@@ -22,7 +33,7 @@ export default async function ProjectDetailPage({
 
   if (!project) notFound()
 
-  const [{ data: siteControl }, { data: revisions }] = await Promise.all([
+  const [{ data: siteControl }, { data: revisions }, { data: subscription }] = await Promise.all([
     supabase
       .from('site_controls')
       .select('*')
@@ -34,12 +45,20 @@ export default async function ProjectDetailPage({
       .eq('project_id', id)
       .order('created_at', { ascending: false })
       .limit(10),
+    supabase
+      .from('subscriptions')
+      .select('status')
+      .eq('project_id', id)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .single(),
   ])
 
   const updateProjectWithId = updateProject.bind(null, id)
   const updateSiteControlWithId = updateSiteControl.bind(null, id)
 
   const client = project.profiles as { full_name: string | null; email: string }
+  const billing = getBillingBadge(subscription, project.monthly_price)
 
   return (
     <div>
@@ -99,6 +118,11 @@ export default async function ProjectDetailPage({
               </div>
 
               <div>
+                <label className="block text-sm font-medium text-gray-300 mb-1.5">Vercel Project</label>
+                <VercelProjectSelect defaultValue={project.vercel_project_id || undefined} />
+              </div>
+
+              <div>
                 <label className="block text-sm font-medium text-gray-300 mb-1.5">Status</label>
                 <select
                   name="status"
@@ -149,6 +173,29 @@ export default async function ProjectDetailPage({
 
         {/* Sidebar */}
         <div className="space-y-6">
+          {/* Billing Status */}
+          <div className="rounded-xl border border-dark-600/50 bg-dark-800/40 p-6">
+            <h2 className="text-lg font-semibold text-white mb-3">Billing</h2>
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-gray-400">Status</span>
+                <StatusBadge status={billing.status} />
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-gray-400">Price</span>
+                <span className="text-sm text-white">
+                  {project.monthly_price > 0 ? `$${project.monthly_price}/mo` : 'Free'}
+                </span>
+              </div>
+              {project.stripe_product_id && (
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-gray-400">Stripe</span>
+                  <span className="text-xs text-gray-500 font-mono truncate ml-2">{project.stripe_product_id}</span>
+                </div>
+              )}
+            </div>
+          </div>
+
           {/* Client Info */}
           <div className="rounded-xl border border-dark-600/50 bg-dark-800/40 p-6">
             <h2 className="text-lg font-semibold text-white mb-3">Client</h2>

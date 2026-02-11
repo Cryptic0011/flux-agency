@@ -5,6 +5,18 @@ import { FilterSelect } from '@/components/ui/filter-form'
 
 export const metadata = { title: 'Projects — Admin' }
 
+function getBillingBadgeStatus(
+  subStatus: string | undefined,
+  monthlyPrice: number
+): string {
+  if (monthlyPrice === 0) return 'no_billing'
+  if (!subStatus) return 'no_billing'
+  if (subStatus === 'active') return 'paid'
+  if (subStatus === 'past_due') return 'overdue'
+  if (subStatus === 'incomplete' || subStatus === 'trialing') return 'pending_billing'
+  return 'no_billing'
+}
+
 export default async function ProjectsPage({
   searchParams,
 }: {
@@ -22,7 +34,21 @@ export default async function ProjectsPage({
     query = query.eq('status', filterStatus)
   }
 
-  const { data: projects } = await query
+  const [{ data: projects }, { data: subscriptions }] = await Promise.all([
+    query,
+    supabase.from('subscriptions').select('project_id, status'),
+  ])
+
+  // Build a map of project_id -> subscription status
+  const subStatusMap: Record<string, string> = {}
+  subscriptions?.forEach((sub) => {
+    if (sub.project_id) {
+      // If multiple subs exist, prioritize active over others
+      if (!subStatusMap[sub.project_id] || sub.status === 'active') {
+        subStatusMap[sub.project_id] = sub.status
+      }
+    }
+  })
 
   return (
     <div>
@@ -58,7 +84,7 @@ export default async function ProjectsPage({
           <table className="w-full">
             <thead>
               <tr className="border-b border-dark-600/50">
-                {['Project', 'Client', 'Status', 'Domain', 'Monthly Price', 'Created'].map((h) => (
+                {['Project', 'Client', 'Status', 'Domain', 'Monthly Price', 'Billing', 'Created'].map((h) => (
                   <th key={h} className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-400">
                     {h}
                   </th>
@@ -66,26 +92,33 @@ export default async function ProjectsPage({
               </tr>
             </thead>
             <tbody className="divide-y divide-dark-600/30">
-              {projects.map((project) => (
-                <tr key={project.id} className="hover:bg-dark-700/50 transition-colors">
-                  <td className="p-0">
-                    <Link href={`/admin/projects/${project.id}`} className="block px-4 py-3 text-sm font-medium text-white">
-                      {project.name}
-                    </Link>
-                  </td>
-                  <td className="px-4 py-3 text-sm text-gray-300">
-                    {(project.profiles as { full_name: string | null })?.full_name || 'Unknown'}
-                  </td>
-                  <td className="px-4 py-3"><StatusBadge status={project.status} /></td>
-                  <td className="px-4 py-3 text-sm text-gray-300">{project.domain || '—'}</td>
-                  <td className="px-4 py-3 text-sm text-gray-300">
-                    {project.monthly_price > 0 ? `$${project.monthly_price}/mo` : 'Free'}
-                  </td>
-                  <td className="px-4 py-3 text-sm text-gray-500 whitespace-nowrap">
-                    {new Date(project.created_at).toLocaleDateString()}
-                  </td>
-                </tr>
-              ))}
+              {projects.map((project) => {
+                const billingStatus = getBillingBadgeStatus(
+                  subStatusMap[project.id],
+                  project.monthly_price
+                )
+                return (
+                  <tr key={project.id} className="hover:bg-dark-700/50 transition-colors">
+                    <td className="p-0">
+                      <Link href={`/admin/projects/${project.id}`} className="block px-4 py-3 text-sm font-medium text-white">
+                        {project.name}
+                      </Link>
+                    </td>
+                    <td className="px-4 py-3 text-sm text-gray-300">
+                      {(project.profiles as { full_name: string | null })?.full_name || 'Unknown'}
+                    </td>
+                    <td className="px-4 py-3"><StatusBadge status={project.status} /></td>
+                    <td className="px-4 py-3 text-sm text-gray-300">{project.domain || '—'}</td>
+                    <td className="px-4 py-3 text-sm text-gray-300">
+                      {project.monthly_price > 0 ? `$${project.monthly_price}/mo` : 'Free'}
+                    </td>
+                    <td className="px-4 py-3"><StatusBadge status={billingStatus} /></td>
+                    <td className="px-4 py-3 text-sm text-gray-500 whitespace-nowrap">
+                      {new Date(project.created_at).toLocaleDateString()}
+                    </td>
+                  </tr>
+                )
+              })}
             </tbody>
           </table>
         </div>
