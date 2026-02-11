@@ -15,6 +15,7 @@ export function VercelProjectSelect({
   const [projects, setProjects] = useState<VercelProject[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [selected, setSelected] = useState(defaultValue || '')
 
   useEffect(() => {
     fetch('/api/vercel/projects')
@@ -38,9 +39,8 @@ export function VercelProjectSelect({
   if (error) {
     return (
       <div>
+        <input type="hidden" name="vercel_project_id" value="" />
         <select
-          name="vercel_project_id"
-          defaultValue=""
           disabled
           className="w-full rounded-lg border border-dark-600 bg-dark-700 px-4 py-2.5 text-sm text-gray-500 focus:border-neon-purple focus:outline-none focus:ring-1 focus:ring-neon-purple"
         >
@@ -51,30 +51,22 @@ export function VercelProjectSelect({
     )
   }
 
-  if (loading) {
-    return (
-      <select
-        name="vercel_project_id"
-        disabled
-        className="w-full rounded-lg border border-dark-600 bg-dark-700 px-4 py-2.5 text-sm text-gray-500 focus:border-neon-purple focus:outline-none focus:ring-1 focus:ring-neon-purple"
-      >
-        <option value="">Loading Vercel projects...</option>
-      </select>
-    )
-  }
-
   return (
-    <select
-      name="vercel_project_id"
-      defaultValue={defaultValue || ''}
-      className="w-full rounded-lg border border-dark-600 bg-dark-700 px-4 py-2.5 text-sm text-white focus:border-neon-purple focus:outline-none focus:ring-1 focus:ring-neon-purple"
-    >
-      <option value="">None</option>
-      {projects.map((p) => (
-        <option key={p.id} value={p.id}>
-          {p.name}
-        </option>
-      ))}
-    </select>
+    <>
+      <input type="hidden" name="vercel_project_id" value={selected} />
+      <select
+        value={selected}
+        onChange={(e) => setSelected(e.target.value)}
+        disabled={loading}
+        className="w-full rounded-lg border border-dark-600 bg-dark-700 px-4 py-2.5 text-sm text-white focus:border-neon-purple focus:outline-none focus:ring-1 focus:ring-neon-purple disabled:text-gray-500"
+      >
+        <option value="">{loading ? 'Loading Vercel projects...' : 'None'}</option>
+        {projects.map((p) => (
+          <option key={p.id} value={p.id}>
+            {p.name}
+          </option>
+        ))}
+      </select>
+    </>
   )
 }
