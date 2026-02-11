@@ -53,16 +53,11 @@ export async function createClientAction(formData: FormData) {
     .eq('id', userId)
 
   // Create Stripe Customer
-  try {
-    const stripeCustomer = await createStripeCustomer(full_name, email, userId)
-    await adminClient
-      .from('profiles')
-      .update({ stripe_customer_id: stripeCustomer.id })
-      .eq('id', userId)
-  } catch (err) {
-    console.error('Failed to create Stripe customer:', err)
-    // Client is still created, Stripe can be set up later
-  }
+  const stripeCustomer = await createStripeCustomer(full_name, email, userId)
+  await adminClient
+    .from('profiles')
+    .update({ stripe_customer_id: stripeCustomer.id })
+    .eq('id', userId)
 
   revalidatePath('/admin/clients')
   revalidatePath('/admin')
