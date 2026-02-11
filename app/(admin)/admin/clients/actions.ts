@@ -126,9 +126,51 @@ export async function sendInvoiceAction(formData: FormData) {
 
   if (!client?.stripe_customer_id) throw new Error('Client has no Stripe customer ID')
 
-  await createInvoice(client.stripe_customer_id, items, projectId)
+  const stripeInvoice = await createInvoice(client.stripe_customer_id, items, projectId)
+
+  // Calculate total in cents
+  const totalCents = items.reduce((sum, item) => sum + Math.round(item.amount * 100), 0)
+  const description = items.map((item) => item.description).join(', ')
+
+  // Write invoice to local DB immediately (don't wait for webhook)
+  await supabase.from('invoices').upsert(
+    {
+      client_id: clientId,
+      project_id: projectId || null,
+      stripe_invoice_id: stripeInvoice.id,
+      number: stripeInvoice.number,
+      amount: totalCents,
+      currency: 'usd',
+      type: 'one_time',
+      status: 'open',
+      due_date: stripeInvoice.due_date
+        ? new Date(stripeInvoice.due_date * 1000).toISOString()
+        : null,
+      hosted_invoice_url: stripeInvoice.hosted_invoice_url,
+      invoice_pdf: stripeInvoice.invoice_pdf,
+      description,
+    },
+    { onConflict: 'stripe_invoice_id' }
+  )
+
+  // Create admin alert for tracking
+  await supabase.from('admin_alerts').insert({
+    type: 'invoice_sent',
+    message: `Invoice #${stripeInvoice.number || stripeInvoice.id} sent for $${(totalCents / 100).toFixed(2)}`,
+    client_id: clientId,
+    project_id: projectId || null,
+  })
+
+  // Log activity
+  await supabase.from('activity_log').insert({
+    client_id: clientId,
+    project_id: projectId || null,
+    event_type: 'invoice.sent',
+    description: `Invoice #${stripeInvoice.number || stripeInvoice.id} sent — $${(totalCents / 100).toFixed(2)}`,
+  })
 
   revalidatePath(`/admin/clients/${clientId}`)
+  revalidatePath('/admin')
 }
 
 export async function dismissAlert(alertId: string) {
