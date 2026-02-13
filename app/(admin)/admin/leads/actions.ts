@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { redirect } from 'next/navigation'
 import { revalidatePath } from 'next/cache'
+import { createStripeCustomer } from '@/lib/stripe-helpers'
 
 export async function updateLead(id: string, formData: FormData) {
   const supabase = await createClient()
@@ -56,12 +57,26 @@ export async function convertLeadToClient(leadId: string) {
 
   // Invite the user via email using service role
   const adminClient = createAdminClient()
-  const { error: inviteError } = await adminClient.auth.admin.inviteUserByEmail(
+  const { data: inviteData, error: inviteError } = await adminClient.auth.admin.inviteUserByEmail(
     lead.email,
     { data: { full_name: lead.name } }
   )
 
   if (inviteError) throw new Error(`Failed to invite: ${inviteError.message}`)
+
+  const newUserId = inviteData.user.id
+
+  // Create Stripe Customer and store on profile
+  try {
+    const stripeCustomer = await createStripeCustomer(lead.name, lead.email, newUserId)
+    await adminClient
+      .from('profiles')
+      .update({ stripe_customer_id: stripeCustomer.id })
+      .eq('id', newUserId)
+  } catch (err) {
+    console.error('Failed to create Stripe customer during lead conversion:', err)
+    // Continue — Stripe customer can be created later
+  }
 
   // Update lead status to converted
   await supabase

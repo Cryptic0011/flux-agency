@@ -5,6 +5,29 @@ import { FilterSelect } from '@/components/ui/filter-form'
 
 export const metadata = { title: 'Projects — Admin' }
 
+function getSiteStatus(
+  vercelProjectId: string | null,
+  siteControl: { is_live: boolean; paused_reason: string | null } | undefined
+): string {
+  if (!vercelProjectId) return 'not_configured'
+  if (!siteControl) return 'not_configured'
+  if (siteControl.is_live) return 'online'
+  if (siteControl.paused_reason === 'invoice_overdue') return 'auto_paused'
+  return 'offline'
+}
+
+function getBillingBadgeStatus(
+  subStatus: string | undefined,
+  monthlyPrice: number
+): string {
+  if (monthlyPrice === 0) return 'no_billing'
+  if (!subStatus) return 'no_billing'
+  if (subStatus === 'active') return 'paid'
+  if (subStatus === 'past_due') return 'overdue'
+  if (subStatus === 'incomplete' || subStatus === 'trialing') return 'pending_billing'
+  return 'no_billing'
+}
+
 export default async function ProjectsPage({
   searchParams,
 }: {
@@ -22,7 +45,30 @@ export default async function ProjectsPage({
     query = query.eq('status', filterStatus)
   }
 
-  const { data: projects } = await query
+  const [{ data: projects }, { data: subscriptions }, { data: siteControls }] = await Promise.all([
+    query,
+    supabase.from('subscriptions').select('project_id, status'),
+    supabase.from('site_controls').select('project_id, is_live, paused_reason'),
+  ])
+
+  // Build a map of project_id -> subscription status
+  const subStatusMap: Record<string, string> = {}
+  subscriptions?.forEach((sub) => {
+    if (sub.project_id) {
+      // If multiple subs exist, prioritize active over others
+      if (!subStatusMap[sub.project_id] || sub.status === 'active') {
+        subStatusMap[sub.project_id] = sub.status
+      }
+    }
+  })
+
+  // Build a map of project_id -> site control
+  const siteControlMap: Record<string, { is_live: boolean; paused_reason: string | null }> = {}
+  siteControls?.forEach((sc) => {
+    if (sc.project_id) {
+      siteControlMap[sc.project_id] = { is_live: sc.is_live, paused_reason: sc.paused_reason }
+    }
+  })
 
   return (
     <div>
@@ -33,7 +79,7 @@ export default async function ProjectsPage({
         </div>
         <Link
           href="/admin/projects/new"
-          className="rounded-lg bg-neon-purple px-4 py-2 text-sm font-medium text-white hover:bg-neon-purple/80 transition-colors"
+          className="inline-flex items-center justify-center rounded-lg bg-neon-purple px-4 py-2 text-sm font-medium text-white hover:bg-neon-purple/80 transition-colors"
         >
           + New Project
         </Link>
@@ -58,7 +104,7 @@ export default async function ProjectsPage({
           <table className="w-full">
             <thead>
               <tr className="border-b border-dark-600/50">
-                {['Project', 'Client', 'Status', 'Domain', 'Monthly Price', 'Created'].map((h) => (
+                {['Project', 'Client', 'Status', 'Site', 'Domain', 'Monthly Price', 'Billing', 'Created'].map((h) => (
                   <th key={h} className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-400">
                     {h}
                   </th>
@@ -66,26 +112,38 @@ export default async function ProjectsPage({
               </tr>
             </thead>
             <tbody className="divide-y divide-dark-600/30">
-              {projects.map((project) => (
-                <tr key={project.id} className="hover:bg-dark-700/50 transition-colors">
-                  <td className="p-0">
-                    <Link href={`/admin/projects/${project.id}`} className="block px-4 py-3 text-sm font-medium text-white">
-                      {project.name}
-                    </Link>
-                  </td>
-                  <td className="px-4 py-3 text-sm text-gray-300">
-                    {(project.profiles as { full_name: string | null })?.full_name || 'Unknown'}
-                  </td>
-                  <td className="px-4 py-3"><StatusBadge status={project.status} /></td>
-                  <td className="px-4 py-3 text-sm text-gray-300">{project.domain || '—'}</td>
-                  <td className="px-4 py-3 text-sm text-gray-300">
-                    {project.monthly_price > 0 ? `$${project.monthly_price}/mo` : 'Free'}
-                  </td>
-                  <td className="px-4 py-3 text-sm text-gray-500 whitespace-nowrap">
-                    {new Date(project.created_at).toLocaleDateString()}
-                  </td>
-                </tr>
-              ))}
+              {projects.map((project) => {
+                const billingStatus = getBillingBadgeStatus(
+                  subStatusMap[project.id],
+                  project.monthly_price
+                )
+                const siteStatus = getSiteStatus(
+                  project.vercel_project_id,
+                  siteControlMap[project.id]
+                )
+                return (
+                  <tr key={project.id} className="hover:bg-dark-700/50 transition-colors">
+                    <td className="p-0">
+                      <Link href={`/admin/projects/${project.id}`} className="block px-4 py-3 text-sm font-medium text-white">
+                        {project.name}
+                      </Link>
+                    </td>
+                    <td className="px-4 py-3 text-sm text-gray-300">
+                      {(project.profiles as { full_name: string | null })?.full_name || 'Unknown'}
+                    </td>
+                    <td className="px-4 py-3"><StatusBadge status={project.status} /></td>
+                    <td className="px-4 py-3"><StatusBadge status={siteStatus} /></td>
+                    <td className="px-4 py-3 text-sm text-gray-300">{project.domain || '—'}</td>
+                    <td className="px-4 py-3 text-sm text-gray-300">
+                      {project.monthly_price > 0 ? `$${project.monthly_price}/mo` : 'Free'}
+                    </td>
+                    <td className="px-4 py-3"><StatusBadge status={billingStatus} /></td>
+                    <td className="px-4 py-3 text-sm text-gray-500 whitespace-nowrap">
+                      {new Date(project.created_at).toLocaleDateString()}
+                    </td>
+                  </tr>
+                )
+              })}
             </tbody>
           </table>
         </div>

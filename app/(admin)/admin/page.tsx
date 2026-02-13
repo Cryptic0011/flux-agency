@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { StatusBadge } from '@/components/ui/status-badge'
+import { DismissAlertButton } from './dismiss-alert-button'
 
 export const metadata = {
   title: 'Admin Dashboard',
@@ -29,6 +30,9 @@ export default async function AdminPage() {
     { count: pendingRevisions },
     { data: recentLeads },
     { data: recentRevisions },
+    { data: revenueProjects },
+    { data: outstandingInvoices },
+    { data: adminAlerts },
   ] = await Promise.all([
     supabase.from('leads').select('*', { count: 'exact', head: true }),
     supabase.from('leads').select('*', { count: 'exact', head: true }).eq('status', 'new'),
@@ -42,7 +46,37 @@ export default async function AdminPage() {
       .eq('status', 'pending')
       .order('created_at', { ascending: false })
       .limit(5),
+    // Get projects with active subscriptions for MRR calculation
+    supabase
+      .from('subscriptions')
+      .select('project_id, projects(monthly_price)')
+      .eq('status', 'active'),
+    // Get outstanding invoices (open or draft)
+    supabase
+      .from('invoices')
+      .select('amount, status')
+      .in('status', ['open', 'draft']),
+    // Get unread admin alerts
+    supabase
+      .from('admin_alerts')
+      .select('*')
+      .eq('is_read', false)
+      .order('created_at', { ascending: false })
+      .limit(10),
   ])
+
+  // Calculate Monthly Revenue from active subscriptions
+  const monthlyRevenue = (revenueProjects || []).reduce((sum, sub) => {
+    const project = sub.projects as unknown as { monthly_price: number } | null
+    return sum + (project?.monthly_price || 0)
+  }, 0)
+
+  // Calculate outstanding invoices total and count
+  const outstandingCount = outstandingInvoices?.length || 0
+  const outstandingTotal = (outstandingInvoices || []).reduce(
+    (sum, inv) => sum + (inv.amount || 0),
+    0
+  )
 
   const stats = [
     {
@@ -70,6 +104,19 @@ export default async function AdminPage() {
       href: '/admin/revisions',
       color: 'from-yellow-500/20 to-yellow-600/5',
     },
+    {
+      label: 'Monthly Revenue',
+      value: `$${monthlyRevenue.toFixed(0)}`,
+      href: '/admin/projects',
+      color: 'from-green-500/20 to-green-600/5',
+    },
+    {
+      label: 'Outstanding Invoices',
+      value: outstandingCount,
+      badge: outstandingTotal > 0 ? `$${(outstandingTotal / 100).toFixed(0)}` : undefined,
+      href: '/admin/clients',
+      color: 'from-red-500/20 to-red-600/5',
+    },
   ]
 
   return (
@@ -82,7 +129,7 @@ export default async function AdminPage() {
       </div>
 
       {/* Stat Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
         {stats.map((stat) => (
           <Link
             key={stat.label}
@@ -99,6 +146,29 @@ export default async function AdminPage() {
           </Link>
         ))}
       </div>
+
+      {/* Needs Attention */}
+      {adminAlerts && adminAlerts.length > 0 && (
+        <div className="rounded-xl border border-red-500/20 bg-red-500/5 mb-8">
+          <div className="border-b border-red-500/20 px-5 py-4">
+            <h2 className="text-lg font-semibold text-white">Needs Attention</h2>
+          </div>
+          <div className="divide-y divide-red-500/10">
+            {adminAlerts.map((alert) => (
+              <div key={alert.id} className="flex items-center justify-between px-5 py-3">
+                <div className="flex items-center gap-3 min-w-0">
+                  <span className="h-2 w-2 shrink-0 rounded-full bg-red-500" />
+                  <div className="min-w-0">
+                    <p className="text-sm text-white truncate">{alert.message}</p>
+                    <p className="text-xs text-gray-500">{timeAgo(alert.created_at)}</p>
+                  </div>
+                </div>
+                <DismissAlertButton alertId={alert.id} />
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Recent Leads */}

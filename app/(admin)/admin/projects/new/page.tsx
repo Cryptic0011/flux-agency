@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { createProject } from '../actions'
+import { VercelProjectSelect } from '@/components/ui/vercel-project-select'
 
 export const metadata = { title: 'New Project — Admin' }
 
@@ -74,6 +75,11 @@ export default async function NewProjectPage({
               className="w-full rounded-lg border border-dark-600 bg-dark-700 px-4 py-2.5 text-sm text-white placeholder-gray-500 focus:border-neon-purple focus:outline-none focus:ring-1 focus:ring-neon-purple"
               placeholder="e.g. acmecorp.com"
             />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-1.5">Vercel Project</label>
+            <VercelProjectSelect />
           </div>
 
           <div>

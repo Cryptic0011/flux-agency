@@ -12,6 +12,8 @@ dist/
 # Environment
 .env
 .env.local
+*.env*
+envaxample.txt
 .env.development.local
 .env.test.local
 .env.production.local
