@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import Stripe from 'stripe'
 import { stripe } from '@/lib/stripe'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { pauseVercelProject, unpauseVercelProject } from '@/lib/vercel'
 
 export const runtime = 'nodejs'
 
@@ -255,6 +256,56 @@ async function handleInvoicePaid(
       },
     })
   }
+
+  // Auto-unpause: only if site was paused due to overdue invoice (not manual)
+  if (projectId) {
+    const { data: siteControl } = await supabase
+      .from('site_controls')
+      .select('is_live, paused_reason')
+      .eq('project_id', projectId)
+      .single()
+
+    if (siteControl && !siteControl.is_live && siteControl.paused_reason === 'invoice_overdue') {
+      const { data: proj } = await supabase
+        .from('projects')
+        .select('vercel_project_id')
+        .eq('id', projectId)
+        .single()
+
+      if (proj?.vercel_project_id) {
+        try {
+          await unpauseVercelProject(proj.vercel_project_id)
+        } catch (err) {
+          const msg = err instanceof Error ? err.message : 'Unknown error'
+          await supabase.from('admin_alerts').insert({
+            type: 'vercel_unpause_failed',
+            message: `Failed to auto-unpause Vercel project: ${msg}`,
+            project_id: projectId,
+            client_id: profile?.id ?? null,
+          })
+        }
+      }
+
+      await supabase
+        .from('site_controls')
+        .update({
+          is_live: true,
+          paused_reason: null,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('project_id', projectId)
+
+      if (profile) {
+        await supabase.from('activity_log').insert({
+          project_id: projectId,
+          client_id: profile.id,
+          event_type: 'site_auto_unpaused',
+          description: `Site auto-unpaused after invoice #${invoice.number} was paid`,
+          metadata: { stripe_invoice_id: invoice.id },
+        })
+      }
+    }
+  }
 }
 
 async function handleInvoicePaymentFailed(
@@ -366,6 +417,56 @@ async function handleInvoiceOverdue(
       description: `Invoice #${invoice.number} is overdue — ${amount}`,
       metadata: { stripe_invoice_id: invoice.id },
     })
+  }
+
+  // Auto-pause: if project has auto_pause_enabled, is_live, and a Vercel link
+  if (projectId) {
+    const { data: siteControl } = await supabase
+      .from('site_controls')
+      .select('is_live, auto_pause_enabled')
+      .eq('project_id', projectId)
+      .single()
+
+    if (siteControl?.auto_pause_enabled && siteControl.is_live) {
+      const { data: proj } = await supabase
+        .from('projects')
+        .select('vercel_project_id')
+        .eq('id', projectId)
+        .single()
+
+      if (proj?.vercel_project_id) {
+        try {
+          await pauseVercelProject(proj.vercel_project_id)
+        } catch (err) {
+          const msg = err instanceof Error ? err.message : 'Unknown error'
+          await supabase.from('admin_alerts').insert({
+            type: 'vercel_pause_failed',
+            message: `Failed to auto-pause Vercel project: ${msg}`,
+            project_id: projectId,
+            client_id: profile?.id ?? null,
+          })
+        }
+      }
+
+      await supabase
+        .from('site_controls')
+        .update({
+          is_live: false,
+          paused_reason: 'invoice_overdue',
+          updated_at: new Date().toISOString(),
+        })
+        .eq('project_id', projectId)
+
+      if (profile) {
+        await supabase.from('activity_log').insert({
+          project_id: projectId,
+          client_id: profile.id,
+          event_type: 'site_auto_paused',
+          description: `Site auto-paused due to overdue invoice #${invoice.number}`,
+          metadata: { stripe_invoice_id: invoice.id },
+        })
+      }
+    }
   }
 }
 

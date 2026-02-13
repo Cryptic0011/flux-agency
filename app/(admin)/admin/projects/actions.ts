@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { revalidatePath } from 'next/cache'
 import { createStripeProduct, createStripePrice, updateSubscriptionPrice } from '@/lib/stripe-helpers'
+import { pauseVercelProject, unpauseVercelProject } from '@/lib/vercel'
 
 async function requireAdmin() {
   const supabase = await createClient()
@@ -168,6 +169,25 @@ export async function updateSiteControl(projectId: string, formData: FormData) {
 
   const is_live = formData.get('is_live') === 'true'
   const auto_pause_enabled = formData.get('auto_pause_enabled') === 'true'
+
+  // Fetch current state + vercel_project_id to detect is_live change
+  const [{ data: currentControl }, { data: project }] = await Promise.all([
+    supabase.from('site_controls').select('is_live').eq('project_id', projectId).single(),
+    supabase.from('projects').select('vercel_project_id').eq('id', projectId).single(),
+  ])
+
+  const isLiveChanged = currentControl && currentControl.is_live !== is_live
+  const vercelProjectId = project?.vercel_project_id
+
+  // If is_live changed and project is linked to Vercel, call Vercel API first
+  // so if it fails the DB stays unchanged
+  if (isLiveChanged && vercelProjectId) {
+    if (is_live) {
+      await unpauseVercelProject(vercelProjectId)
+    } else {
+      await pauseVercelProject(vercelProjectId)
+    }
+  }
 
   await supabase
     .from('site_controls')

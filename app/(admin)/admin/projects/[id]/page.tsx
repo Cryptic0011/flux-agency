@@ -2,8 +2,9 @@ import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { StatusBadge } from '@/components/ui/status-badge'
-import { VercelProjectSelect } from '@/components/ui/vercel-project-select'
 import { updateProject, updateSiteControl } from '../actions'
+import { ProjectForm } from './project-form'
+import { SiteControl } from './site-control'
 
 export const metadata = { title: 'Project Detail — Admin' }
 
@@ -74,74 +75,7 @@ export default async function ProjectDetailPage({
           <div className="rounded-xl border border-dark-600/50 bg-dark-800/40 p-6">
             <h1 className="text-2xl font-bold text-white mb-6">Edit Project</h1>
 
-            <form action={updateProjectWithId} className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-1.5">Name</label>
-                <input
-                  name="name"
-                  defaultValue={project.name}
-                  required
-                  className="w-full rounded-lg border border-dark-600 bg-dark-700 px-4 py-2.5 text-sm text-white focus:border-neon-purple focus:outline-none focus:ring-1 focus:ring-neon-purple"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-1.5">Description</label>
-                <textarea
-                  name="description"
-                  defaultValue={project.description || ''}
-                  rows={3}
-                  className="w-full rounded-lg border border-dark-600 bg-dark-700 px-4 py-2.5 text-sm text-white focus:border-neon-purple focus:outline-none focus:ring-1 focus:ring-neon-purple resize-y"
-                />
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-1.5">Domain</label>
-                  <input
-                    name="domain"
-                    defaultValue={project.domain || ''}
-                    className="w-full rounded-lg border border-dark-600 bg-dark-700 px-4 py-2.5 text-sm text-white focus:border-neon-purple focus:outline-none focus:ring-1 focus:ring-neon-purple"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-1.5">Monthly Price ($)</label>
-                  <input
-                    name="monthly_price"
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    defaultValue={project.monthly_price}
-                    className="w-full rounded-lg border border-dark-600 bg-dark-700 px-4 py-2.5 text-sm text-white focus:border-neon-purple focus:outline-none focus:ring-1 focus:ring-neon-purple"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-1.5">Vercel Project</label>
-                <VercelProjectSelect defaultValue={project.vercel_project_id || undefined} />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-1.5">Status</label>
-                <select
-                  name="status"
-                  defaultValue={project.status}
-                  className="w-full rounded-lg border border-dark-600 bg-dark-700 px-4 py-2.5 text-sm text-white focus:border-neon-purple focus:outline-none focus:ring-1 focus:ring-neon-purple"
-                >
-                  <option value="active">Active</option>
-                  <option value="paused">Paused</option>
-                  <option value="completed">Completed</option>
-                </select>
-              </div>
-
-              <button
-                type="submit"
-                className="rounded-lg bg-neon-purple px-4 py-2.5 text-sm font-medium text-white hover:bg-neon-purple/80 transition-colors"
-              >
-                Save Changes
-              </button>
-            </form>
+            <ProjectForm key={project.updated_at} project={project} action={updateProjectWithId} />
           </div>
 
           {/* Revisions */}
@@ -214,58 +148,7 @@ export default async function ProjectDetailPage({
             <div className="rounded-xl border border-dark-600/50 bg-dark-800/40 p-6">
               <h2 className="text-lg font-semibold text-white mb-3">Site Control</h2>
 
-              <form action={updateSiteControlWithId} className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <label className="text-sm text-gray-300">Site Live</label>
-                  <label className="relative inline-flex items-center cursor-pointer">
-                    <input
-                      type="hidden"
-                      name="is_live"
-                      value={siteControl.is_live ? 'true' : 'false'}
-                    />
-                    <button
-                      type="submit"
-                      name="is_live"
-                      value={siteControl.is_live ? 'false' : 'true'}
-                      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                        siteControl.is_live ? 'bg-green-500' : 'bg-dark-600'
-                      }`}
-                    >
-                      <span
-                        className={`inline-block h-4 w-4 rounded-full bg-white transition-transform ${
-                          siteControl.is_live ? 'translate-x-6' : 'translate-x-1'
-                        }`}
-                      />
-                    </button>
-                  </label>
-                </div>
-
-                {siteControl.paused_reason && (
-                  <p className="text-xs text-yellow-400">
-                    Paused: {siteControl.paused_reason}
-                  </p>
-                )}
-
-                <div className="flex items-center justify-between">
-                  <label className="text-sm text-gray-300">Auto-pause on overdue</label>
-                  <button
-                    type="submit"
-                    name="auto_pause_enabled"
-                    value={siteControl.auto_pause_enabled ? 'false' : 'true'}
-                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                      siteControl.auto_pause_enabled ? 'bg-green-500' : 'bg-dark-600'
-                    }`}
-                  >
-                    <span
-                      className={`inline-block h-4 w-4 rounded-full bg-white transition-transform ${
-                        siteControl.auto_pause_enabled ? 'translate-x-6' : 'translate-x-1'
-                      }`}
-                    />
-                  </button>
-                </div>
-                <input type="hidden" name="auto_pause_enabled" value={siteControl.auto_pause_enabled ? 'true' : 'false'} />
-                <input type="hidden" name="is_live" value={siteControl.is_live ? 'true' : 'false'} />
-              </form>
+              <SiteControl siteControl={siteControl} action={updateSiteControlWithId} hasVercelProject={!!project.vercel_project_id} />
             </div>
           )}
         </div>

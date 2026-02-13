@@ -23,6 +23,12 @@ const colorMap: Record<string, string> = {
   void: 'bg-red-500/20 text-red-400 border-red-500/30',
   uncollectible: 'bg-red-500/20 text-red-400 border-red-500/30',
 
+  // Site statuses
+  online: 'bg-green-500/20 text-green-400 border-green-500/30',
+  offline: 'bg-red-500/20 text-red-400 border-red-500/30',
+  not_configured: 'bg-gray-500/20 text-gray-400 border-gray-500/30',
+  auto_paused: 'bg-orange-500/20 text-orange-400 border-orange-500/30',
+
   // Subscription / billing statuses
   past_due: 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30',
   canceled: 'bg-red-500/20 text-red-400 border-red-500/30',
