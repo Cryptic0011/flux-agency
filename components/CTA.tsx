@@ -165,8 +165,8 @@ export default function CTA() {
             {/* Direct Contact Info */}
             <p className="text-gray-400 text-sm mt-6">
               Contact directly at:{' '}
-              <a href="mailto:hello@builtbyflux" className="text-neon-purple hover:text-neon-blue transition-colors">
-                hello@builtbyflux
+              <a href="mailto:hello@builtbyflux.com" className="text-neon-purple hover:text-neon-blue transition-colors">
+                hello@builtbyflux.com
               </a>
               {' '}or{' '}
               <a href="tel:4704552576" className="text-neon-purple hover:text-neon-blue transition-colors">
