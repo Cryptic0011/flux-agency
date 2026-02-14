@@ -162,6 +162,18 @@ export default function CTA() {
               </Link>
             </div>
 
+            {/* Direct Contact Info */}
+            <p className="text-gray-400 text-sm mt-6">
+              Contact directly at:{' '}
+              <a href="mailto:hello@builtbyflux" className="text-neon-purple hover:text-neon-blue transition-colors">
+                hello@builtbyflux
+              </a>
+              {' '}or{' '}
+              <a href="tel:4704552576" className="text-neon-purple hover:text-neon-blue transition-colors">
+                (470) 455-2576
+              </a>
+            </p>
+
             {/* Inline Contact Form */}
             <div
               ref={formRef}
