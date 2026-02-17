@@ -110,7 +110,7 @@ export default async function PortalPage() {
             </p>
           </div>
           <Link
-            href="/portal/billing"
+            href="/portal/billing?status=outstanding"
             className="rounded-lg bg-yellow-500/20 px-4 py-1.5 text-sm font-medium text-yellow-300 hover:bg-yellow-500/30 transition-colors"
           >
             View Billing
