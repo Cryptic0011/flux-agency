@@ -65,6 +65,19 @@ export default async function NewRevisionPage({
             />
           </div>
 
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-1.5">Priority</label>
+            <div className="flex gap-3">
+              {['low', 'normal', 'urgent'].map((p) => (
+                <label key={p} className="flex items-center gap-2 cursor-pointer">
+                  <input type="radio" name="priority" value={p} defaultChecked={p === 'normal'}
+                    className="text-neon-purple focus:ring-neon-purple" />
+                  <span className="text-sm text-gray-300 capitalize">{p}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+
           <button
             type="submit"
             className="w-full rounded-lg bg-neon-purple px-4 py-2.5 text-sm font-medium text-white hover:bg-neon-purple/80 transition-colors"

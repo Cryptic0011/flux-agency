@@ -13,8 +13,8 @@ export async function createRevision(formData: FormData) {
   const project_id = formData.get('project_id') as string
   const title = formData.get('title') as string
   const description = formData.get('description') as string
+  const priority = (formData.get('priority') as string) || 'normal'
 
-  // Verify user owns this project
   const { data: project } = await supabase
     .from('projects')
     .select('id')
@@ -24,16 +24,47 @@ export async function createRevision(formData: FormData) {
 
   if (!project) throw new Error('Project not found or access denied')
 
-  await supabase
+  const { data: revision } = await supabase
     .from('revisions')
-    .insert({
+    .insert({ project_id, client_id: user.id, title, description, priority })
+    .select('id')
+    .single()
+
+  if (!revision) throw new Error('Failed to create revision')
+
+  // Create the initial note from the description if provided
+  if (description?.trim()) {
+    await supabase.from('notes').insert({
       project_id,
-      client_id: user.id,
-      title,
-      description,
+      revision_id: revision.id,
+      author_id: user.id,
+      content: description,
     })
+  }
+
+  // Notify all admins
+  const { data: admins } = await supabase
+    .from('profiles')
+    .select('id')
+    .eq('role', 'admin')
+
+  if (admins) {
+    for (const admin of admins) {
+      await supabase.from('notifications').insert({
+        recipient_id: admin.id,
+        type: 'new_revision',
+        title: `New revision request: ${title}`,
+        body: description?.slice(0, 100) || title,
+        link: `/admin/revisions/${revision.id}`,
+        project_id,
+        revision_id: revision.id,
+      })
+    }
+  }
 
   revalidatePath(`/portal/projects/${project_id}`)
   revalidatePath('/portal')
-  redirect(`/portal/projects/${project_id}`)
+  revalidatePath('/admin/revisions')
+  revalidatePath('/admin')
+  redirect(`/portal/projects/${project_id}/revisions/${revision.id}`)
 }
