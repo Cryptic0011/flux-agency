@@ -45,7 +45,8 @@ export default async function AdminPage() {
       .from('revisions')
       .select('*, profiles!revisions_client_id_fkey(full_name), projects(name)')
       .eq('status', 'pending')
-      .order('created_at', { ascending: false }),
+      .order('created_at', { ascending: false })
+      .limit(25),
     // Get projects with active subscriptions for MRR calculation
     supabase
       .from('subscriptions')

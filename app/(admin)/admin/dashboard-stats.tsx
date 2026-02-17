@@ -64,6 +64,7 @@ export function DashboardStats({
                 key={stat.label}
                 onClick={() => toggle(stat.label)}
                 type="button"
+                aria-expanded={isExpanded}
                 className={`relative overflow-hidden rounded-xl border text-left ${
                   isExpanded ? 'border-dark-500' : 'border-dark-600/50'
                 } bg-gradient-to-br ${stat.color} p-6 hover:border-dark-500 transition-colors`}
