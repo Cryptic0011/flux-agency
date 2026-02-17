@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { AdminNav } from './admin-nav'
+import { NotificationBell } from '@/components/ui/notification-bell'
 
 export default async function AdminLayout({
   children,
@@ -23,6 +24,19 @@ export default async function AdminLayout({
     .eq('id', user.id)
     .single()
 
+  const { data: notifications } = await supabase
+    .from('notifications')
+    .select('*')
+    .eq('recipient_id', user.id)
+    .order('created_at', { ascending: false })
+    .limit(10)
+
+  const { count: unreadCount } = await supabase
+    .from('notifications')
+    .select('*', { count: 'exact', head: true })
+    .eq('recipient_id', user.id)
+    .eq('is_read', false)
+
   if (profile?.role !== 'admin') {
     redirect('/portal')
   }
@@ -35,6 +49,11 @@ export default async function AdminLayout({
         <header className="sticky top-0 z-30 border-b border-dark-600/50 bg-dark-800/80 backdrop-blur-sm">
           <div className="flex items-center justify-end h-16 px-4 sm:px-6 lg:px-8">
             <div className="flex items-center gap-4">
+              <NotificationBell
+                notifications={notifications || []}
+                unreadCount={unreadCount ?? 0}
+                viewAllHref="/admin/notifications"
+              />
               <span className="text-sm text-gray-400">
                 {profile?.full_name || user.email}
               </span>
