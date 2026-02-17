@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { StatusBadge } from '@/components/ui/status-badge'
+import { WebsitePreview } from '@/components/ui/website-preview'
 import { relativeTime } from '@/lib/utils'
 
 export const metadata = {
@@ -110,7 +111,7 @@ export default async function PortalPage() {
             </p>
           </div>
           <Link
-            href="/portal/billing"
+            href="/portal/billing?status=outstanding"
             className="rounded-lg bg-yellow-500/20 px-4 py-1.5 text-sm font-medium text-yellow-300 hover:bg-yellow-500/30 transition-colors"
           >
             View Billing
@@ -129,20 +130,28 @@ export default async function PortalPage() {
                 <Link
                   key={project.id}
                   href={`/portal/projects/${project.id}`}
-                  className="rounded-xl border border-dark-600/50 bg-dark-800/40 p-5 hover:border-dark-500 transition-colors"
+                  className="group overflow-hidden rounded-xl border border-dark-600/50 bg-dark-800/40 hover:border-dark-500 transition-colors"
                 >
-                  <div className="flex items-center justify-between mb-3">
-                    <h3 className="text-sm font-semibold text-white">{project.name}</h3>
-                    <StatusBadge status={project.status} />
+                  {/* Website Preview */}
+                  <div className="pointer-events-none">
+                    <WebsitePreview domain={project.domain} size="md" />
                   </div>
-                  {project.domain && (
-                    <p className="text-xs text-gray-500 mb-2">{project.domain}</p>
-                  )}
-                  <div className="flex items-center justify-between">
-                    <p className="text-lg font-bold text-white">
-                      {project.monthly_price > 0 ? `$${project.monthly_price}/mo` : 'Free tier'}
-                    </p>
-                    <StatusBadge status={billing} />
+
+                  {/* Project Info */}
+                  <div className="p-5">
+                    <div className="flex items-center justify-between mb-3">
+                      <h3 className="text-sm font-semibold text-white">{project.name}</h3>
+                      <StatusBadge status={project.status} />
+                    </div>
+                    {project.domain && (
+                      <p className="text-xs text-gray-500 mb-2">{project.domain}</p>
+                    )}
+                    <div className="flex items-center justify-between">
+                      <p className="text-lg font-bold text-white">
+                        {project.monthly_price > 0 ? `$${project.monthly_price}/mo` : 'Free tier'}
+                      </p>
+                      <StatusBadge status={billing} />
+                    </div>
                   </div>
                 </Link>
               )

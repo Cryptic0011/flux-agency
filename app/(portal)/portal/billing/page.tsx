@@ -1,3 +1,4 @@
+import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { StatusBadge } from '@/components/ui/status-badge'
 import { formatCurrency } from '@/lib/utils'
@@ -5,7 +6,12 @@ import { redirectToBillingPortal } from './actions'
 
 export const metadata = { title: 'Billing — Client Portal' }
 
-export default async function BillingPage() {
+export default async function BillingPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ status?: string }>
+}) {
+  const { status: statusFilter } = await searchParams
   const supabase = await createClient()
 
   const {
@@ -30,6 +36,14 @@ export default async function BillingPage() {
         .eq('client_id', user!.id)
         .order('created_at', { ascending: false }),
     ])
+
+  const filteredInvoices = invoices
+    ? statusFilter === 'outstanding'
+      ? invoices.filter((inv) => ['open', 'past_due'].includes(inv.status))
+      : statusFilter === 'paid'
+        ? invoices.filter((inv) => inv.status === 'paid')
+        : invoices
+    : []
 
   return (
     <div>
@@ -91,7 +105,30 @@ export default async function BillingPage() {
       {/* Invoice History */}
       <div className="mb-8">
         <h2 className="text-lg font-semibold text-white mb-4">Invoice History</h2>
-        {invoices && invoices.length > 0 ? (
+        <div className="flex gap-2 mb-4">
+          {[
+            { label: 'All', value: undefined },
+            { label: 'Outstanding', value: 'outstanding' },
+            { label: 'Paid', value: 'paid' },
+          ].map((tab) => {
+            const isActive = statusFilter === tab.value || (!statusFilter && !tab.value)
+            const href = tab.value ? `/portal/billing?status=${tab.value}` : '/portal/billing'
+            return (
+              <Link
+                key={tab.label}
+                href={href}
+                className={`rounded-lg px-4 py-1.5 text-sm font-medium transition-colors ${
+                  isActive
+                    ? 'bg-neon-purple text-white'
+                    : 'bg-dark-700/50 text-gray-400 hover:text-white hover:bg-dark-700'
+                }`}
+              >
+                {tab.label}
+              </Link>
+            )
+          })}
+        </div>
+        {filteredInvoices.length > 0 ? (
           <div className="rounded-xl border border-dark-600/50 bg-dark-800/40 overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full">
@@ -115,7 +152,7 @@ export default async function BillingPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-dark-600/30">
-                  {invoices.map((inv) => (
+                  {filteredInvoices.map((inv) => (
                     <tr key={inv.id}>
                       <td className="px-5 py-3 text-sm text-white whitespace-nowrap">
                         {new Date(inv.created_at).toLocaleDateString('en-US', {
@@ -157,10 +194,14 @@ export default async function BillingPage() {
           </div>
         ) : (
           <div className="rounded-xl border border-dark-600/50 bg-dark-800/40 py-8 text-center">
-            <p className="text-sm text-gray-500">No invoices yet.</p>
-            <p className="mt-1 text-xs text-gray-600">
-              Invoices will appear here once billing is set up.
+            <p className="text-sm text-gray-500">
+              {statusFilter ? 'No invoices match this filter.' : 'No invoices yet.'}
             </p>
+            {!statusFilter && (
+              <p className="mt-1 text-xs text-gray-600">
+                Invoices will appear here once billing is set up.
+              </p>
+            )}
           </div>
         )}
       </div>

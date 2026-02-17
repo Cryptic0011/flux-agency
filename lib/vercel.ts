@@ -32,6 +32,27 @@ export async function listVercelProjects(): Promise<VercelProject[]> {
   }))
 }
 
+export async function getVercelProjectDomains(projectId: string): Promise<{ name: string }[]> {
+  const token = process.env.VERCEL_API_TOKEN
+  if (!token) {
+    throw new Error('VERCEL_API_TOKEN is not set')
+  }
+
+  const res = await fetch(`${VERCEL_API_BASE}/v9/projects/${projectId}/domains`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+    next: { revalidate: 60 },
+  })
+
+  if (!res.ok) {
+    throw new Error(`Vercel API error: ${res.status}`)
+  }
+
+  const data = await res.json()
+  return data.domains || []
+}
+
 export async function pauseVercelProject(projectId: string): Promise<void> {
   const token = process.env.VERCEL_API_TOKEN
   if (!token) {

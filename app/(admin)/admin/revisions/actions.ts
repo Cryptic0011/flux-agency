@@ -25,6 +25,29 @@ export async function updateRevisionStatus(id: string, formData: FormData) {
     .update({ status, admin_notes, updated_at: new Date().toISOString() })
     .eq('id', id)
 
+  // Notify the client about the status change
+  const { data: revision } = await supabase
+    .from('revisions')
+    .select('client_id, title, project_id')
+    .eq('id', id)
+    .single()
+
+  if (revision) {
+    await supabase.from('notifications').insert({
+      recipient_id: revision.client_id,
+      type: 'status_change',
+      title: `Revision "${revision.title}" marked as ${status.replace(/_/g, ' ')}`,
+      body: admin_notes || `Status changed to ${status.replace(/_/g, ' ')}`,
+      link: `/portal/projects/${revision.project_id}/revisions/${id}`,
+      project_id: revision.project_id,
+      revision_id: id,
+    })
+  }
+
   revalidatePath('/admin/revisions')
+  revalidatePath(`/admin/revisions/${id}`)
   revalidatePath('/admin')
+  if (revision) {
+    revalidatePath(`/portal/projects/${revision.project_id}`)
+  }
 }

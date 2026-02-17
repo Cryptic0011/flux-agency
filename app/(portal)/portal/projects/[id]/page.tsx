@@ -2,6 +2,12 @@ import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { StatusBadge } from '@/components/ui/status-badge'
+import { NotesFeed } from '@/components/ui/notes-feed'
+import { NoteComposer } from '@/components/ui/note-composer'
+import { ReadReceiptTracker } from '@/components/ui/read-receipt-tracker'
+import { PriorityBadge } from '@/components/ui/priority-badge'
+import { WebsitePreview } from '@/components/ui/website-preview'
+import { createNote } from '@/lib/actions/notes'
 import { relativeTime } from '@/lib/utils'
 
 export const metadata = { title: 'Project — Client Portal' }
@@ -29,7 +35,7 @@ export default async function PortalProjectDetailPage({
 
   const { data: { user } } = await supabase.auth.getUser()
 
-  const [{ data: project }, { data: revisions }, { data: subscription }, { data: activityLog }] =
+  const [{ data: project }, { data: revisions }, { data: subscription }, { data: activityLog }, { data: projectNotes }] =
     await Promise.all([
       supabase
         .from('projects')
@@ -57,9 +63,24 @@ export default async function PortalProjectDetailPage({
         .eq('project_id', id)
         .eq('client_id', user!.id)
         .order('created_at', { ascending: false }),
+      supabase
+        .from('notes')
+        .select('*, profiles(full_name, role), note_attachments(*), note_read_receipts(user_id, read_at, profiles(full_name))')
+        .eq('project_id', id)
+        .is('revision_id', null)
+        .order('created_at', { ascending: true }),
     ])
 
   if (!project) notFound()
+
+  const unreadNoteIds = (projectNotes || [])
+    .filter(n =>
+      n.author_id !== user!.id &&
+      !n.note_read_receipts?.some((r: { user_id: string }) => r.user_id === user!.id)
+    )
+    .map(n => n.id)
+
+  const storageUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
 
   return (
     <div>
@@ -68,6 +89,13 @@ export default async function PortalProjectDetailPage({
           &larr; Back to Dashboard
         </Link>
       </div>
+
+      {/* Website Preview */}
+      {project.domain && (
+        <div className="mb-6">
+          <WebsitePreview domain={project.domain} size="lg" />
+        </div>
+      )}
 
       {/* Project Info + Billing Summary side by side on larger screens */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
@@ -153,6 +181,20 @@ export default async function PortalProjectDetailPage({
         </div>
       </div>
 
+      {/* Project Notes */}
+      <div className="rounded-xl border border-dark-600/50 bg-dark-800/40 mb-6">
+        <div className="border-b border-dark-600/50 px-5 py-4">
+          <h2 className="text-lg font-semibold text-white">Notes</h2>
+        </div>
+        <div className="p-5">
+          <NotesFeed notes={projectNotes || []} currentUserId={user!.id} storageUrl={storageUrl} />
+          {unreadNoteIds.length > 0 && <ReadReceiptTracker noteIds={unreadNoteIds} />}
+          <div className="mt-4">
+            <NoteComposer action={createNote} projectId={id} placeholder="Add a note about this project..." />
+          </div>
+        </div>
+      </div>
+
       {/* Revisions */}
       <div className="rounded-xl border border-dark-600/50 bg-dark-800/40 mb-6">
         <div className="flex items-center justify-between border-b border-dark-600/50 px-5 py-4">
@@ -168,26 +210,22 @@ export default async function PortalProjectDetailPage({
         {revisions && revisions.length > 0 ? (
           <div className="divide-y divide-dark-600/30">
             {revisions.map((rev) => (
-              <div key={rev.id} className="px-5 py-4">
-                <div className="flex items-center justify-between mb-2">
-                  <h3 className="text-sm font-medium text-white">{rev.title}</h3>
-                  <div className="flex items-center gap-3">
+              <Link
+                key={rev.id}
+                href={`/portal/projects/${id}/revisions/${rev.id}`}
+                className="block px-5 py-4 hover:bg-dark-700/50 transition-colors"
+              >
+                <div className="flex items-center justify-between">
+                  <h3 className="text-sm font-medium text-white truncate">{rev.title}</h3>
+                  <div className="flex items-center gap-2 shrink-0 ml-4">
+                    <PriorityBadge priority={rev.priority} />
                     <StatusBadge status={rev.status} />
                     <span className="text-xs text-gray-500">
                       {new Date(rev.created_at).toLocaleDateString()}
                     </span>
                   </div>
                 </div>
-                {rev.description && (
-                  <p className="text-sm text-gray-400 mb-2">{rev.description}</p>
-                )}
-                {rev.admin_notes && (
-                  <div className="mt-2 rounded-lg bg-dark-700/50 p-3">
-                    <p className="text-xs uppercase tracking-wider text-gray-500 mb-1">Response</p>
-                    <p className="text-sm text-gray-300">{rev.admin_notes}</p>
-                  </div>
-                )}
-              </div>
+              </Link>
             ))}
           </div>
         ) : (
