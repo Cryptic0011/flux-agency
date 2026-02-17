@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { StatusBadge } from '@/components/ui/status-badge'
 import { FilterSelect } from '@/components/ui/filter-form'
+import { WebsitePreview } from '@/components/ui/website-preview'
 
 export const metadata = { title: 'Projects — Admin' }
 
@@ -124,8 +125,11 @@ export default async function ProjectsPage({
                 return (
                   <tr key={project.id} className="hover:bg-dark-700/50 transition-colors">
                     <td className="p-0">
-                      <Link href={`/admin/projects/${project.id}`} className="block px-4 py-3 text-sm font-medium text-white">
-                        {project.name}
+                      <Link href={`/admin/projects/${project.id}`} className="flex items-center gap-3 px-4 py-3">
+                        <div className="hidden shrink-0 sm:block">
+                          <WebsitePreview domain={project.domain} size="sm" />
+                        </div>
+                        <span className="text-sm font-medium text-white">{project.name}</span>
                       </Link>
                     </td>
                     <td className="px-4 py-3 text-sm text-gray-300">
