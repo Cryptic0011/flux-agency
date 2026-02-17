@@ -7,10 +7,26 @@ const TRANSPARENT_PIXEL = Buffer.from(
 
 const DOMAIN_REGEX = /^([a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?\.)+[a-zA-Z]{2,}$/
 
-export async function GET(request: NextRequest) {
-  const domain = request.nextUrl.searchParams.get('domain')
+/** Strip protocol prefix and trailing slashes from domain values */
+function normalizeDomain(raw: string): string {
+  return raw
+    .replace(/^https?:\/\//, '')
+    .replace(/\/+$/, '')
+}
 
-  if (!domain || !DOMAIN_REGEX.test(domain)) {
+export async function GET(request: NextRequest) {
+  const rawDomain = request.nextUrl.searchParams.get('domain')
+
+  if (!rawDomain) {
+    return new NextResponse(TRANSPARENT_PIXEL, {
+      status: 400,
+      headers: { 'Content-Type': 'image/png' },
+    })
+  }
+
+  const domain = normalizeDomain(rawDomain)
+
+  if (!DOMAIN_REGEX.test(domain)) {
     return new NextResponse(TRANSPARENT_PIXEL, {
       status: 400,
       headers: { 'Content-Type': 'image/png' },
