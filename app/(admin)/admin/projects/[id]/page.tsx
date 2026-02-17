@@ -6,6 +6,7 @@ import { NotesFeed } from '@/components/ui/notes-feed'
 import { NoteComposer } from '@/components/ui/note-composer'
 import { ReadReceiptTracker } from '@/components/ui/read-receipt-tracker'
 import { PriorityBadge } from '@/components/ui/priority-badge'
+import { WebsitePreview } from '@/components/ui/website-preview'
 import { createNote } from '@/lib/actions/notes'
 import { updateProject, updateSiteControl } from '../actions'
 import { ProjectForm } from './project-form'
@@ -94,6 +95,11 @@ export default async function ProjectDetailPage({
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Project Edit Form */}
         <div className="lg:col-span-2 space-y-6">
+          {/* Website Preview */}
+          {project.domain && (
+            <WebsitePreview domain={project.domain} size="lg" />
+          )}
+
           <div className="rounded-xl border border-dark-600/50 bg-dark-800/40 p-6">
             <h1 className="text-2xl font-bold text-white mb-6">Edit Project</h1>
 
