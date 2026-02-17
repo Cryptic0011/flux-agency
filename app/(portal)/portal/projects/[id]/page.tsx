@@ -6,6 +6,7 @@ import { NotesFeed } from '@/components/ui/notes-feed'
 import { NoteComposer } from '@/components/ui/note-composer'
 import { ReadReceiptTracker } from '@/components/ui/read-receipt-tracker'
 import { PriorityBadge } from '@/components/ui/priority-badge'
+import { WebsitePreview } from '@/components/ui/website-preview'
 import { createNote } from '@/lib/actions/notes'
 import { relativeTime } from '@/lib/utils'
 
@@ -88,6 +89,13 @@ export default async function PortalProjectDetailPage({
           &larr; Back to Dashboard
         </Link>
       </div>
+
+      {/* Website Preview */}
+      {project.domain && (
+        <div className="mb-6">
+          <WebsitePreview domain={project.domain} size="lg" />
+        </div>
+      )}
 
       {/* Project Info + Billing Summary side by side on larger screens */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
