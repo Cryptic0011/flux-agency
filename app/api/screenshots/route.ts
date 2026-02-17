@@ -5,10 +5,12 @@ const TRANSPARENT_PIXEL = Buffer.from(
   'base64'
 )
 
+const DOMAIN_REGEX = /^([a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?\.)+[a-zA-Z]{2,}$/
+
 export async function GET(request: NextRequest) {
   const domain = request.nextUrl.searchParams.get('domain')
 
-  if (!domain) {
+  if (!domain || !DOMAIN_REGEX.test(domain)) {
     return new NextResponse(TRANSPARENT_PIXEL, {
       status: 400,
       headers: { 'Content-Type': 'image/png' },

@@ -19,19 +19,21 @@ export function WebsitePreview({ domain, size = 'md' }: WebsitePreviewProps) {
 
   return (
     <div className="overflow-hidden rounded-lg border border-dark-600/50">
-      {/* Browser chrome bar */}
-      <div className="flex items-center gap-2 bg-dark-700 px-3 py-2">
-        <div className="flex gap-1.5">
-          <span className="h-2.5 w-2.5 rounded-full bg-red-500/70" />
-          <span className="h-2.5 w-2.5 rounded-full bg-yellow-500/70" />
-          <span className="h-2.5 w-2.5 rounded-full bg-green-500/70" />
-        </div>
-        <div className="ml-2 flex-1">
-          <div className="truncate rounded bg-dark-600/80 px-3 py-1 text-[11px] text-gray-400">
-            {domain}
+      {/* Browser chrome bar (hidden for sm thumbnails) */}
+      {size !== 'sm' && (
+        <div className="flex items-center gap-2 bg-dark-700 px-3 py-2">
+          <div className="flex gap-1.5">
+            <span className="h-2.5 w-2.5 rounded-full bg-red-500/70" />
+            <span className="h-2.5 w-2.5 rounded-full bg-yellow-500/70" />
+            <span className="h-2.5 w-2.5 rounded-full bg-green-500/70" />
+          </div>
+          <div className="ml-2 flex-1">
+            <div className="truncate rounded bg-dark-600/80 px-3 py-1 text-[11px] text-gray-400">
+              {domain}
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
       {/* Screenshot area */}
       <div
@@ -74,13 +76,15 @@ export function WebsitePreview({ domain, size = 'md' }: WebsitePreviewProps) {
 function PreviewPlaceholder({ size }: { size: string }) {
   return (
     <div className="overflow-hidden rounded-lg border border-dark-600/50">
-      <div className="flex items-center gap-2 bg-dark-700 px-3 py-2">
-        <div className="flex gap-1.5">
-          <span className="h-2.5 w-2.5 rounded-full bg-dark-500" />
-          <span className="h-2.5 w-2.5 rounded-full bg-dark-500" />
-          <span className="h-2.5 w-2.5 rounded-full bg-dark-500" />
+      {size !== 'sm' && (
+        <div className="flex items-center gap-2 bg-dark-700 px-3 py-2">
+          <div className="flex gap-1.5">
+            <span className="h-2.5 w-2.5 rounded-full bg-dark-500" />
+            <span className="h-2.5 w-2.5 rounded-full bg-dark-500" />
+            <span className="h-2.5 w-2.5 rounded-full bg-dark-500" />
+          </div>
         </div>
-      </div>
+      )}
       <div
         className={`flex items-center justify-center bg-dark-800 ${
           size === 'sm' ? 'h-16 w-28' : 'aspect-video'
