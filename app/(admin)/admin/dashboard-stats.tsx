@@ -65,7 +65,7 @@ export function DashboardStats({
                 onClick={() => toggle(stat.label)}
                 type="button"
                 className={`relative overflow-hidden rounded-xl border text-left ${
-                  isExpanded ? 'border-dark-400' : 'border-dark-600/50'
+                  isExpanded ? 'border-dark-500' : 'border-dark-600/50'
                 } bg-gradient-to-br ${stat.color} p-6 hover:border-dark-500 transition-colors`}
               >
                 <p className="text-sm text-gray-400">
@@ -103,8 +103,13 @@ export function DashboardStats({
       </div>
 
       {/* Expanded: Outstanding Invoices */}
+      {expanded === 'Outstanding Invoices' && invoices.length === 0 && (
+        <div className="mb-6 rounded-xl border border-red-500/20 bg-dark-800/40 px-5 py-6 text-center">
+          <p className="text-sm text-gray-500">No outstanding invoices.</p>
+        </div>
+      )}
       {expanded === 'Outstanding Invoices' && invoices.length > 0 && (
-        <div className="mb-6 rounded-xl border border-red-500/20 bg-dark-800/40 overflow-hidden animate-in slide-in-from-top-2 duration-200">
+        <div className="mb-6 rounded-xl border border-red-500/20 bg-dark-800/40 overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
@@ -150,8 +155,13 @@ export function DashboardStats({
       )}
 
       {/* Expanded: Pending Revisions */}
+      {expanded === 'Pending Revisions' && revisions.length === 0 && (
+        <div className="mb-6 rounded-xl border border-yellow-500/20 bg-dark-800/40 px-5 py-6 text-center">
+          <p className="text-sm text-gray-500">No pending revisions.</p>
+        </div>
+      )}
       {expanded === 'Pending Revisions' && revisions.length > 0 && (
-        <div className="mb-6 rounded-xl border border-yellow-500/20 bg-dark-800/40 overflow-hidden animate-in slide-in-from-top-2 duration-200">
+        <div className="mb-6 rounded-xl border border-yellow-500/20 bg-dark-800/40 overflow-hidden">
           <div className="divide-y divide-dark-600/30">
             {revisions.map((rev) => (
               <Link
