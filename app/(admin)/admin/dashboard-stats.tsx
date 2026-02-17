@@ -4,7 +4,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { StatusBadge } from '@/components/ui/status-badge'
 
-type Invoice = {
+export type Invoice = {
   id: string
   client_id: string
   project_id: string | null
@@ -18,7 +18,7 @@ type Invoice = {
   projects: { name: string } | null
 }
 
-type Revision = {
+export type Revision = {
   id: string
   title: string
   status: string
@@ -52,8 +52,8 @@ export function DashboardStats({
   }
 
   return (
-    <div>
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-2">
+    <div className="mb-8">
+      <div className={`grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 ${expanded ? 'mb-4' : ''}`}>
         {stats.map((stat) => {
           const isExpandable = !!stat.expandable
           const isExpanded = expanded === stat.label

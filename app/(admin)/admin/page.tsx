@@ -2,7 +2,7 @@ import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { StatusBadge } from '@/components/ui/status-badge'
 import { DismissAlertButton } from './dismiss-alert-button'
-import { DashboardStats } from './dashboard-stats'
+import { DashboardStats, type Invoice, type Revision } from './dashboard-stats'
 
 export const metadata = {
   title: 'Admin Dashboard',
@@ -133,8 +133,8 @@ export default async function AdminPage() {
       {/* Stat Cards */}
       <DashboardStats
         stats={stats}
-        invoices={(outstandingInvoices || []) as any}
-        revisions={(recentRevisions || []) as any}
+        invoices={(outstandingInvoices || []) as unknown as Invoice[]}
+        revisions={(recentRevisions || []) as unknown as Revision[]}
       />
 
       {/* Needs Attention */}
