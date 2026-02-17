@@ -1,7 +1,6 @@
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { StatusBadge } from '@/components/ui/status-badge'
-import { DismissAlertButton } from './dismiss-alert-button'
 import { DashboardStats, type Invoice, type Revision } from './dashboard-stats'
 
 export const metadata = {
@@ -22,6 +21,7 @@ function timeAgo(date: string) {
 
 export default async function AdminPage() {
   const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
 
   const [
     { count: leadsTotal },
@@ -33,7 +33,7 @@ export default async function AdminPage() {
     { data: recentRevisions },
     { data: revenueProjects },
     { data: outstandingInvoices },
-    { data: adminAlerts },
+    { data: unreadNotifications },
   ] = await Promise.all([
     supabase.from('leads').select('*', { count: 'exact', head: true }),
     supabase.from('leads').select('*', { count: 'exact', head: true }).eq('status', 'new'),
@@ -57,10 +57,11 @@ export default async function AdminPage() {
       .from('invoices')
       .select('id, client_id, project_id, amount, status, due_date, description, number, created_at, profiles!invoices_client_id_fkey(full_name), projects(name)')
       .in('status', ['open', 'draft']),
-    // Get unread admin alerts
+    // Get unread notifications
     supabase
-      .from('admin_alerts')
+      .from('notifications')
       .select('*')
+      .eq('recipient_id', user!.id)
       .eq('is_read', false)
       .order('created_at', { ascending: false })
       .limit(10),
@@ -139,22 +140,21 @@ export default async function AdminPage() {
       />
 
       {/* Needs Attention */}
-      {adminAlerts && adminAlerts.length > 0 && (
+      {unreadNotifications && unreadNotifications.length > 0 && (
         <div className="rounded-xl border border-red-500/20 bg-red-500/5 mb-8">
           <div className="border-b border-red-500/20 px-5 py-4">
             <h2 className="text-lg font-semibold text-white">Needs Attention</h2>
           </div>
           <div className="divide-y divide-red-500/10">
-            {adminAlerts.map((alert) => (
-              <div key={alert.id} className="flex items-center justify-between px-5 py-3">
-                <div className="flex items-center gap-3 min-w-0">
+            {unreadNotifications.map((notif) => (
+              <div key={notif.id} className="flex items-center justify-between px-5 py-3">
+                <Link href={notif.link} className="flex items-center gap-3 min-w-0 group">
                   <span className="h-2 w-2 shrink-0 rounded-full bg-red-500" />
                   <div className="min-w-0">
-                    <p className="text-sm text-white truncate">{alert.message}</p>
-                    <p className="text-xs text-gray-500">{timeAgo(alert.created_at)}</p>
+                    <p className="text-sm text-white truncate group-hover:text-neon-purple transition-colors">{notif.title}</p>
+                    <p className="text-xs text-gray-500">{timeAgo(notif.created_at)}</p>
                   </div>
-                </div>
-                <DismissAlertButton alertId={alert.id} />
+                </Link>
               </div>
             ))}
           </div>
@@ -207,9 +207,10 @@ export default async function AdminPage() {
           {recentRevisions && recentRevisions.length > 0 ? (
             <div className="divide-y divide-dark-600/30">
               {recentRevisions.map((rev) => (
-                <div
+                <Link
                   key={rev.id}
-                  className="flex items-center justify-between px-5 py-3"
+                  href={`/admin/revisions/${rev.id}`}
+                  className="flex items-center justify-between px-5 py-3 hover:bg-dark-700/50 transition-colors"
                 >
                   <div className="min-w-0">
                     <p className="text-sm font-medium text-white truncate">{rev.title}</p>
@@ -221,7 +222,7 @@ export default async function AdminPage() {
                   <span className="text-xs text-gray-500 ml-4 shrink-0">
                     {timeAgo(rev.created_at)}
                   </span>
-                </div>
+                </Link>
               ))}
             </div>
           ) : (
