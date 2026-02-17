@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { StatusBadge } from '@/components/ui/status-badge'
 import { DismissAlertButton } from './dismiss-alert-button'
+import { DashboardStats } from './dashboard-stats'
 
 export const metadata = {
   title: 'Admin Dashboard',
@@ -44,8 +45,7 @@ export default async function AdminPage() {
       .from('revisions')
       .select('*, profiles!revisions_client_id_fkey(full_name), projects(name)')
       .eq('status', 'pending')
-      .order('created_at', { ascending: false })
-      .limit(5),
+      .order('created_at', { ascending: false }),
     // Get projects with active subscriptions for MRR calculation
     supabase
       .from('subscriptions')
@@ -54,7 +54,7 @@ export default async function AdminPage() {
     // Get outstanding invoices (open or draft)
     supabase
       .from('invoices')
-      .select('amount, status')
+      .select('id, client_id, project_id, amount, status, due_date, description, number, created_at, profiles!invoices_client_id_fkey(full_name), projects(name)')
       .in('status', ['open', 'draft']),
     // Get unread admin alerts
     supabase
@@ -103,6 +103,7 @@ export default async function AdminPage() {
       value: pendingRevisions ?? 0,
       href: '/admin/revisions',
       color: 'from-yellow-500/20 to-yellow-600/5',
+      expandable: 'revisions' as const,
     },
     {
       label: 'Monthly Revenue',
@@ -116,6 +117,7 @@ export default async function AdminPage() {
       badge: outstandingTotal > 0 ? `$${(outstandingTotal / 100).toFixed(0)}` : undefined,
       href: '/admin/clients',
       color: 'from-red-500/20 to-red-600/5',
+      expandable: 'invoices' as const,
     },
   ]
 
@@ -129,23 +131,11 @@ export default async function AdminPage() {
       </div>
 
       {/* Stat Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
-        {stats.map((stat) => (
-          <Link
-            key={stat.label}
-            href={stat.href}
-            className={`relative overflow-hidden rounded-xl border border-dark-600/50 bg-gradient-to-br ${stat.color} p-6 hover:border-dark-500 transition-colors`}
-          >
-            <p className="text-sm text-gray-400">{stat.label}</p>
-            <p className="mt-1 text-3xl font-bold text-white">{stat.value}</p>
-            {stat.badge && (
-              <span className="absolute top-4 right-4 inline-flex items-center rounded-full bg-purple-500/20 px-2 py-0.5 text-xs font-medium text-purple-400 border border-purple-500/30">
-                {stat.badge}
-              </span>
-            )}
-          </Link>
-        ))}
-      </div>
+      <DashboardStats
+        stats={stats}
+        invoices={(outstandingInvoices || []) as any}
+        revisions={(recentRevisions || []) as any}
+      />
 
       {/* Needs Attention */}
       {adminAlerts && adminAlerts.length > 0 && (
