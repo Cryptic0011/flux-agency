@@ -1,10 +1,20 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 
+const ALLOWED_REDIRECTS = ['/portal', '/admin']
+
+function getSafeRedirect(value: string | null): string {
+  const path = value ?? '/portal'
+  if (ALLOWED_REDIRECTS.some((prefix) => path === prefix || path.startsWith(prefix + '/'))) {
+    return path
+  }
+  return '/portal'
+}
+
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url)
   const code = searchParams.get('code')
-  const next = searchParams.get('next') ?? '/portal'
+  const next = getSafeRedirect(searchParams.get('next'))
 
   if (code) {
     const supabase = await createClient()

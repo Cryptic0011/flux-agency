@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { NextRequest, NextResponse } from 'next/server'
 
 const VALID_BUSINESS_TYPES = new Set([
@@ -14,19 +15,18 @@ const VALID_BUSINESS_TYPES = new Set([
   'Other',
 ])
 
-// In-memory rate limiting by IP (resets on server restart, which is fine for this scale)
-const submissions = new Map<string, number[]>()
 const RATE_LIMIT = 5
 const RATE_WINDOW_MS = 60 * 60 * 1000 // 1 hour
 
-function isRateLimited(ip: string): boolean {
-  const now = Date.now()
-  const timestamps = submissions.get(ip) || []
-  const recent = timestamps.filter((t) => now - t < RATE_WINDOW_MS)
-  submissions.set(ip, recent)
-  if (recent.length >= RATE_LIMIT) return true
-  recent.push(now)
-  return false
+async function isRateLimited(ip: string): Promise<boolean> {
+  const supabase = createAdminClient()
+  const since = new Date(Date.now() - RATE_WINDOW_MS).toISOString()
+  const { count } = await supabase
+    .from('contact_submissions')
+    .select('*', { count: 'exact', head: true })
+    .eq('metadata->>ip', ip)
+    .gte('created_at', since)
+  return (count ?? 0) >= RATE_LIMIT
 }
 
 // Strip HTML tags to prevent XSS in email notifications
@@ -50,7 +50,7 @@ export async function POST(req: NextRequest) {
       req.headers.get('x-real-ip') ||
       'unknown'
 
-    if (isRateLimited(ip)) {
+    if (await isRateLimited(ip)) {
       return NextResponse.json(
         { error: 'Too many submissions. Please try again later.' },
         { status: 429 }
